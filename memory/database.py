@@ -142,3 +142,16 @@ def complete_task(task_id: int) -> None:
         )
 
         connection.commit()
+
+def delete_task(task_id: int) -> None:
+    """Delete a task by its ID."""
+    with sqlite3.connect(DATABASE_PATH) as connection:
+        connection.execute(
+            """
+            DELETE FROM tasks
+            WHERE id = ?
+            """,
+            (task_id,),
+        )
+
+        connection.commit()
