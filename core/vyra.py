@@ -1,21 +1,46 @@
+from morning.facts import MorningFactsCollector
+from morning.generator import MorningBriefingGenerator
+
+from interaction.events import (
+    EventGenerationContext,
+    ProactiveEventGenerator,
+)
+
+from interaction.loop import ProactiveLoop
+
+from activity.monitor import ActivityMonitor
+from context.context import ContextManager
 from datetime import datetime
+from threading import Event, Thread
+from time import sleep
 from zoneinfo import ZoneInfo
 
 from brain.ollama_brain import OllamaBrain
 
 from memory.database import (
+    acknowledge_missed_task,
     get_pending_tasks,
     get_relevant_memories,
     initialize_database,
+    mark_task_delivered,
     save_memory,
     save_task,
 )
+
+from scheduler.scheduler import Scheduler
 
 from tools.calculator import calculate
 from tools.registry import Tool, ToolRegistry
 from tools.router import ToolRouter
 from tools.weather import get_weather
 
+from interaction.engine import InteractionEngine
+from interaction.policy import (
+    InteractionEvent,
+    InteractionEventType,
+    InteractionPriority,
+    InteractionDecision,
+)
 
 class VYRA:
     """Core VYRA assistant."""
@@ -127,6 +152,36 @@ TASK RULES:
             self.tools
         )
 
+        self.scheduler = Scheduler(
+            timezone=self.TIMEZONE
+        )
+
+        self.interaction_engine = InteractionEngine()
+
+        self.proactive_event_generator = (
+            ProactiveEventGenerator()
+        )
+
+        self.proactive_loop = ProactiveLoop(
+            callback=self.evaluate_proactive_events,
+            interval_seconds=15,
+        )
+
+        self.morning_facts_collector = MorningFactsCollector()
+        self.morning_briefing_generator = MorningBriefingGenerator(
+            brain=self.brain
+        )
+
+        self.context_manager = ContextManager(
+            timezone=self.TIMEZONE,
+            idle_threshold_seconds=300,
+        )
+
+        self.activity_monitor = ActivityMonitor()
+
+        self._scheduler_stop_event = Event()
+        self._scheduler_thread: Thread | None = None
+        
         # ---------------------------------------------------------
         # Short-term conversation history
         # ---------------------------------------------------------
@@ -328,7 +383,7 @@ TASK RULES:
     # =============================================================
 
     def get_task_context(self) -> str:
-        """Return pending tasks."""
+        """Return currently active tasks for conversational context."""
 
         tasks = get_pending_tasks()
 
@@ -338,10 +393,21 @@ TASK RULES:
             )
 
         lines = [
-            "Pending tasks:"
+            "Current tasks:"
         ]
 
-        for task_id, title, due_at, status in tasks:
+        for task in tasks:
+            (
+                task_id,
+                title,
+                due_at,
+                status,
+                created_at,
+                delivered_at,
+                completed_at,
+                missed_at,
+            ) = task
+
             due_text = (
                 due_at
                 if due_at
@@ -350,7 +416,8 @@ TASK RULES:
 
             lines.append(
                 f"- Task ID {task_id}: "
-                f"{title} | Due: {due_text} | "
+                f"{title} | "
+                f"Due: {due_text} | "
                 f"Status: {status}"
             )
 
@@ -685,10 +752,389 @@ Rules:
     # MAIN LOOP
     # =============================================================
 
+    def check_missed_reminders(self) -> list[str]:
+        """Check for reminders missed while VYRA was not running."""
+
+        missed_tasks = self.scheduler.get_missed_tasks()
+
+        messages: list[str] = []
+
+        for task in missed_tasks:
+            messages.append(
+                f"You missed your reminder for "
+                f"'{task.title}', which was scheduled for "
+                f"{task.due_at}."
+            )
+
+        return messages
+
+    def check_missed_reminders(self) -> list[dict[str, str | int]]:
+        """Return reminders that were missed while VYRA was unavailable."""
+
+        missed_tasks = self.scheduler.get_missed_tasks()
+
+        reminders: list[dict[str, str | int]] = []
+
+        for task in missed_tasks:
+            reminders.append(
+                {
+                    "task_id": task.task_id,
+                    "title": task.title,
+                    "due_at": task.due_at,
+                }
+            )
+
+        return reminders
+
+    def handle_due_reminders(self) -> None:
+        """Check due reminders and pass them through the interaction engine."""
+
+        due_tasks = self.scheduler.get_due_tasks()
+
+        if not due_tasks:
+            return
+
+        for task in due_tasks:
+            event = InteractionEvent(
+                event_type=InteractionEventType.REMINDER_DUE.value,
+                message=(
+                    f"Reminder due: {task.title}"
+                ),
+                priority=InteractionPriority.HIGH,
+            )
+
+            context = self.get_interaction_context()
+
+            decision = (
+                self.interaction_engine.evaluate(
+                    event,
+                    context,
+                )
+            )
+
+            if decision != InteractionDecision.SPEAK:
+                continue
+
+            print(
+                f"\nVYRA: Sir, your reminder is due: "
+                f"'{task.title}'."
+            )
+
+            self.context_manager.mark_vyra_interaction()
+
+            mark_task_delivered(
+                task.task_id
+            )
+
+            print()
+
+    def _scheduler_loop(self) -> None:
+        """
+        Background loop that checks reminders periodically.
+
+        This runs independently of the normal chat input loop.
+        """
+
+        while not self._scheduler_stop_event.is_set():
+            
+            try:
+                self.handle_due_reminders()
+
+            except Exception as error:
+                print(
+                    f"\nVYRA scheduler error: {error}\n"
+                )
+
+            # Check every 10 seconds.
+            self._scheduler_stop_event.wait(
+                10
+            )
+
+    def start_scheduler(self) -> None:
+        """Start the background scheduler thread."""
+
+        if (
+            self._scheduler_thread is not None
+            and self._scheduler_thread.is_alive()
+        ):
+            return
+
+        self._scheduler_stop_event.clear()
+
+        self._scheduler_thread = Thread(
+            target=self._scheduler_loop,
+            name="VYRA-Scheduler",
+            daemon=True,
+        )
+
+        self._scheduler_thread.start()
+        
+
+    def stop_scheduler(self) -> None:
+        """Stop the background scheduler thread."""
+
+        self._scheduler_stop_event.set()
+
+        if (
+            self._scheduler_thread is not None
+            and self._scheduler_thread.is_alive()
+        ):
+            self._scheduler_thread.join(
+                timeout=1
+            )
+
+    def get_interaction_context(self):
+        """Build interaction context from live VYRA state."""
+
+        self.update_activity_context()
+
+        current = self.context_manager.context
+
+        recent_interaction = False
+
+        if (
+            current.last_user_interaction is not None
+            and current.last_vyra_interaction is not None
+        ):
+            elapsed_since_vyra = (
+                current.current_time
+                - current.last_vyra_interaction
+            ).total_seconds()
+
+            recent_interaction = (
+                elapsed_since_vyra < 60
+            )
+
+        return self.interaction_engine.create_context(
+            session_state=current.session_state,
+            idle_seconds=current.idle_seconds,
+            user_busy=current.user_busy,
+            user_active=current.user_active,
+            recent_interaction=recent_interaction,
+            proactive_enabled=True,
+        )
+
+    def update_activity_context(self) -> None:
+        """Synchronize computer activity with VYRA context."""
+
+        idle_seconds = (
+            self.activity_monitor.get_idle_seconds()
+        )
+
+        self.context_manager.update_activity(
+            idle_seconds
+        )
+
+    def evaluate_proactive_events(self) -> None:
+        """
+        Generate candidate proactive events and let the
+        interaction engine decide whether one should be spoken.
+        """
+
+        context = self.context_manager.context
+
+        generation_context = EventGenerationContext(
+            current_time=context.current_time,
+            session_state=context.session_state,
+            idle_seconds=context.idle_seconds,
+            activity_count=context.activity_count,
+            user_active=context.user_active,
+            user_busy=context.user_busy,
+            proactive_enabled=True,
+
+            morning_briefing_completed=(
+                self.context_manager
+                .daily_state
+                .morning_briefing_completed
+            ),
+
+            morning_briefing_needed=(
+                self.context_manager
+                .is_morning_briefing_needed()
+            ),
+
+            user_returned=False,
+        )
+
+        candidates = (
+            self.proactive_event_generator.generate(
+                generation_context
+            )
+        )
+
+        if not candidates:
+            return
+
+        interaction_context = (
+            self.get_interaction_context()
+        )
+
+        for event in candidates:
+            decision = (
+                self.interaction_engine.evaluate(
+                    event,
+                    interaction_context,
+                )
+            )
+
+            if decision.value != "speak":
+                continue
+
+            self.deliver_proactive_event(
+                event
+            )
+
+            break
+
+    def deliver_proactive_event(
+        self,
+        event,
+    ) -> None:
+        """
+        Deliver a proactive event.
+
+        Morning briefing events are generated from verified facts.
+        Other events currently use their prepared message.
+        """
+
+        message = event.message
+
+        if (
+            event.event_type
+            == InteractionEventType.MORNING_START.value
+        ):
+            try:
+                facts = (
+                    self.morning_facts_collector.collect()
+                )
+
+                message = (
+                    self.morning_briefing_generator.generate(
+                        facts
+                    )
+                )
+
+            except Exception as error:
+                print(
+                    f"\nVYRA morning briefing error: {error}\n"
+                )
+
+                return
+
+        print(
+            f"\nVYRA: {message}\n"
+        )
+
+        now = self.context_manager.now()
+
+        self.context_manager.mark_vyra_interaction()
+
+        self.interaction_engine.record_proactive_interaction(
+            event,
+            now,
+        )
+
+        if (
+            event.event_type
+            == InteractionEventType.MORNING_START.value
+        ):
+            self.context_manager.mark_morning_briefing_completed()
+
+    def handle_startup_morning_briefing(
+        self,
+        force: bool = False,
+    ) -> None:
+
+
+        """
+        Check whether today's first meaningful session should
+        receive a morning briefing.
+        """
+
+        daily_state = (
+            self.context_manager.daily_state
+        )
+
+        if not self.context_manager.is_morning_briefing_needed():
+            return
+
+        current_hour = (
+            self.context_manager.now().hour
+        )
+
+        if (
+            not force
+            and not 5 <= current_hour < 12
+        ):
+            return
+
+        event = InteractionEvent(
+            event_type=(
+                InteractionEventType.MORNING_START.value
+            ),
+            message=(
+                "A morning briefing may be appropriate."
+            ),
+            priority=InteractionPriority.NORMAL,
+        )
+
+        context = (
+            self.get_interaction_context()
+        )
+
+        decision = (
+            self.interaction_engine.evaluate(
+                event,
+                context,
+            )
+        )
+
+        if (
+            decision
+            != InteractionDecision.SPEAK
+        ):
+            return
+
+        self.deliver_proactive_event(
+            event
+        )
+
     def run(self) -> None:
         """Start the VYRA text interface."""
 
         print("VYRA: Online.")
+        self.context_manager.start_session()
+
+        self.handle_startup_morning_briefing()
+
+        self.activity_monitor.start()
+        
+
+        missed_reminders = self.check_missed_reminders()
+
+        if missed_reminders:
+            print(
+                "\nVYRA: I have a reminder update for you."
+            )
+
+            for reminder in missed_reminders:
+                print(
+                    f"VYRA: You missed your reminder for "
+                    f"'{reminder['title']}', which was scheduled "
+                    f"for {reminder['due_at']}."
+                )
+
+                acknowledge_missed_task(
+                    int(reminder["task_id"])
+                )
+
+            print()
+
+                # Start live reminder monitoring.
+        self.start_scheduler()
+        self.proactive_loop.start()
+
+
         print("Type 'exit' to close VYRA.")
         print("Commands:")
         print("  /remember <something>")
@@ -700,11 +1146,19 @@ Rules:
                 "You: "
             ).strip()
 
+            self.context_manager.mark_user_interaction()
+
             # -----------------------------------------------------
             # Exit
             # -----------------------------------------------------
 
             if user_input.lower() == "exit":
+
+                self.activity_monitor.stop()
+                self.proactive_loop.stop()
+                self.context_manager.end_session()
+                self.stop_scheduler()
+
                 print(
                     f"VYRA: {self.get_goodbye()}"
                 )

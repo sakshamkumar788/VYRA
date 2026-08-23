@@ -1,6 +1,9 @@
 import re
 import sqlite3
 from pathlib import Path
+import sqlite3
+from datetime import datetime
+
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -9,7 +12,7 @@ DATABASE_PATH = DATA_DIR / "vyra.db"
 
 
 def initialize_database() -> None:
-    """Create the VYRA database and memory table if they do not exist."""
+    """Create the VYRA database tables if they do not exist."""
     DATA_DIR.mkdir(exist_ok=True)
 
     with sqlite3.connect(DATABASE_PATH) as connection:
@@ -22,21 +25,66 @@ def initialize_database() -> None:
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
             """
-        
         )
+
         connection.execute(
             """
             CREATE TABLE IF NOT EXISTS tasks (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 title TEXT NOT NULL,
                 due_at TEXT,
-                status TEXT NOT NULL DEFAULT 'pending',
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                status TEXT NOT NULL DEFAULT 'scheduled',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                delivered_at TEXT,
+                completed_at TEXT,
+                missed_at TEXT
             )
             """
         )
+
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS briefing_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                briefing_date TEXT NOT NULL,
+                topics TEXT NOT NULL,
+                summary TEXT,
+                delivered_at TEXT NOT NULL
+            )
+            """
+        )
+
         connection.commit()
 
+    migrate_tasks_table()
+
+def migrate_tasks_table() -> None:
+    """Add new task columns to an existing VYRA database."""
+
+    with sqlite3.connect(DATABASE_PATH) as connection:
+        cursor = connection.execute(
+            "PRAGMA table_info(tasks)"
+        )
+
+        existing_columns = {
+            row[1]
+            for row in cursor.fetchall()
+        }
+
+        required_columns = {
+            "delivered_at": "TEXT",
+            "completed_at": "TEXT",
+            "missed_at": "TEXT",
+        }
+
+        for column_name, column_type in required_columns.items():
+            if column_name not in existing_columns:
+                connection.execute(
+                    f"ALTER TABLE tasks ADD COLUMN "
+                    f"{column_name} {column_type}"
+                )
+
+        connection.commit()
 
 def save_memory(memory_type: str, content: str) -> None:
     """Save a long-term memory."""
@@ -114,15 +162,34 @@ def save_task(title: str, due_at: str | None = None) -> None:
         connection.commit()
 
 
-def get_pending_tasks() -> list[tuple[int, str, str | None, str]]:
-    """Return all pending tasks."""
+def get_pending_tasks() -> list[tuple]:
+    """Return active tasks with their full reminder state."""
+
     with sqlite3.connect(DATABASE_PATH) as connection:
         cursor = connection.execute(
             """
-            SELECT id, title, due_at, status
+            SELECT
+                id,
+                title,
+                due_at,
+                status,
+                created_at,
+                delivered_at,
+                completed_at,
+                missed_at
             FROM tasks
-            WHERE status = 'pending'
-            ORDER BY id ASC
+            WHERE status IN (
+                'scheduled',
+                'pending',
+                'due',
+                'missed'
+            )
+            ORDER BY
+                CASE
+                    WHEN due_at IS NULL THEN 1
+                    ELSE 0
+                END,
+                due_at ASC
             """
         )
 
@@ -155,3 +222,194 @@ def delete_task(task_id: int) -> None:
         )
 
         connection.commit()
+
+def mark_task_due(task_id: int) -> None:
+    """Mark a scheduled task as due."""
+
+    with sqlite3.connect(DATABASE_PATH) as connection:
+        connection.execute(
+            """
+            UPDATE tasks
+            SET status = 'due'
+            WHERE id = ?
+            AND status IN ('scheduled', 'pending')
+            """,
+            (task_id,),
+        )
+
+        connection.commit()
+
+
+def mark_task_delivered(task_id: int) -> None:
+    """Mark a task reminder as delivered."""
+
+    now = datetime.now().isoformat(
+        timespec="seconds"
+    )
+
+    with sqlite3.connect(DATABASE_PATH) as connection:
+        connection.execute(
+            """
+            UPDATE tasks
+            SET status = 'delivered',
+                delivered_at = ?
+            WHERE id = ?
+            """,
+            (now, task_id),
+        )
+
+        connection.commit()
+
+
+def mark_task_missed(task_id: int) -> None:
+    """Mark a task reminder as missed."""
+
+    now = datetime.now().isoformat(
+        timespec="seconds"
+    )
+
+    with sqlite3.connect(DATABASE_PATH) as connection:
+        connection.execute(
+            """
+            UPDATE tasks
+            SET status = 'missed',
+                missed_at = ?
+            WHERE id = ?
+            """,
+            (now, task_id),
+        )
+
+        connection.commit()
+
+
+def complete_task(task_id: int) -> None:
+    """Mark a task as completed."""
+
+    now = datetime.now().isoformat(
+        timespec="seconds"
+    )
+
+    with sqlite3.connect(DATABASE_PATH) as connection:
+        connection.execute(
+            """
+            UPDATE tasks
+            SET status = 'completed',
+                completed_at = ?
+            WHERE id = ?
+            """,
+            (now, task_id),
+        )
+
+        connection.commit()
+
+def get_missed_tasks() -> list[tuple]:
+    """Return tasks that were missed and have not been handled yet."""
+
+    with sqlite3.connect(DATABASE_PATH) as connection:
+        cursor = connection.execute(
+            """
+            SELECT
+                id,
+                title,
+                due_at,
+                status,
+                created_at,
+                delivered_at,
+                completed_at,
+                missed_at
+            FROM tasks
+            WHERE status = 'missed'
+            ORDER BY missed_at ASC
+            """
+        )
+
+        return cursor.fetchall()
+
+def acknowledge_missed_task(task_id: int) -> None:
+    """Mark a missed reminder as acknowledged by the user."""
+
+    with sqlite3.connect(DATABASE_PATH) as connection:
+        connection.execute(
+            """
+            UPDATE tasks
+            SET status = 'acknowledged'
+            WHERE id = ?
+            AND status = 'missed'
+            """,
+            (task_id,),
+        )
+
+        connection.commit()
+
+def save_briefing_history(
+    briefing_date: str,
+    topics: list[str],
+    summary: str,
+    delivered_at: str,
+) -> None:
+    """Save lightweight history about a delivered briefing."""
+
+    with sqlite3.connect(DATABASE_PATH) as connection:
+        connection.execute(
+            """
+            INSERT INTO briefing_history (
+                briefing_date,
+                topics,
+                summary,
+                delivered_at
+            )
+            VALUES (?, ?, ?, ?)
+            """,
+            (
+                briefing_date,
+                ", ".join(topics),
+                summary,
+                delivered_at,
+            ),
+        )
+
+        connection.commit()
+
+def get_recent_briefing_history(
+    limit: int = 7,
+) -> list[tuple]:
+    """Return recent briefing history entries."""
+
+    with sqlite3.connect(DATABASE_PATH) as connection:
+        cursor = connection.execute(
+            """
+            SELECT
+                briefing_date,
+                topics,
+                summary,
+                delivered_at
+            FROM briefing_history
+            ORDER BY id DESC
+            LIMIT ?
+            """,
+            (limit,),
+        )
+
+        return cursor.fetchall()
+
+def get_today_briefing_history(
+    briefing_date: str,
+) -> list[tuple]:
+    """Return today's briefing history."""
+
+    with sqlite3.connect(DATABASE_PATH) as connection:
+        cursor = connection.execute(
+            """
+            SELECT
+                briefing_date,
+                topics,
+                summary,
+                delivered_at
+            FROM briefing_history
+            WHERE briefing_date = ?
+            ORDER BY id DESC
+            """,
+            (briefing_date,),
+        )
+
+        return cursor.fetchall()
