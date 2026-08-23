@@ -54,6 +54,22 @@ def initialize_database() -> None:
             """
         )
 
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS important_places (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                place_type TEXT NOT NULL,
+                city TEXT,
+                region TEXT,
+                country TEXT,
+                importance INTEGER NOT NULL DEFAULT 50,
+                notes TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        )
+
         connection.commit()
 
     migrate_tasks_table()
@@ -410,6 +426,68 @@ def get_today_briefing_history(
             ORDER BY id DESC
             """,
             (briefing_date,),
+        )
+
+        return cursor.fetchall()
+
+def save_important_place(
+    name: str,
+    place_type: str,
+    city: str | None = None,
+    region: str | None = None,
+    country: str | None = None,
+    importance: int = 50,
+    notes: str | None = None,
+) -> None:
+    """Save a personally important place."""
+
+    with sqlite3.connect(DATABASE_PATH) as connection:
+        connection.execute(
+            """
+            INSERT INTO important_places (
+                name,
+                place_type,
+                city,
+                region,
+                country,
+                importance,
+                notes
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                name,
+                place_type,
+                city,
+                region,
+                country,
+                importance,
+                notes,
+            ),
+        )
+
+        connection.commit()
+
+
+def get_important_places() -> list[tuple]:
+    """Return all personally important places."""
+
+    with sqlite3.connect(DATABASE_PATH) as connection:
+        cursor = connection.execute(
+            """
+            SELECT
+                id,
+                name,
+                place_type,
+                city,
+                region,
+                country,
+                importance,
+                notes,
+                created_at
+            FROM important_places
+            ORDER BY importance DESC, id ASC
+            """
         )
 
         return cursor.fetchall()

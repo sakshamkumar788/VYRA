@@ -1,3 +1,10 @@
+from intelligence.interaction_adapter import (
+    IntelligenceInteractionAdapter,
+)
+
+from location.service import LocationService
+from location.manager import LocationManager
+
 from morning.facts import MorningFactsCollector
 from morning.generator import MorningBriefingGenerator
 
@@ -175,6 +182,15 @@ TASK RULES:
         self.context_manager = ContextManager(
             timezone=self.TIMEZONE,
             idle_threshold_seconds=300,
+        )
+
+        self.location_service = LocationService()
+
+        self.location_manager = LocationManager()
+        self.location_manager.load_important_places_from_database()
+
+        self.intelligence_interaction_adapter = (
+            IntelligenceInteractionAdapter()
         )
 
         self.activity_monitor = ActivityMonitor()
@@ -1099,11 +1115,84 @@ Rules:
             event
         )
 
+    def update_location_context(self) -> None:
+        """
+        Update VYRA's context from the Windows location service.
+
+        Precise coordinates remain inside the location subsystem.
+        Only the coarse human-readable area is exposed to VYRA context.
+        """
+
+        try:
+            location = (
+                self.location_service
+                .get_current_location()
+            )
+
+            parts = [
+                location.city,
+                location.region,
+                location.country,
+            ]
+
+            location_name = ", ".join(
+                part
+                for part in parts
+                if part
+            )
+
+            self.context_manager.update_location(
+                location_name=location_name or None,
+                accuracy_meters=(
+                    location.accuracy_meters
+                ),
+            )
+
+        except Exception as error:
+            print(
+                f"\nVYRA location update unavailable: "
+                f"{error}\n"
+            )
+
+    def evaluate_intelligence_story(
+        self,
+        story,
+        delivery,
+    ):
+        """
+        Convert a ranked intelligence story into an interaction
+        decision using VYRA's existing InteractionEngine.
+        """
+
+        event = (
+            self.intelligence_interaction_adapter
+            .create_event(
+                story,
+                delivery,
+            )
+        )
+
+        if event is None:
+            return None
+
+        context = (
+            self.get_interaction_context()
+        )
+
+        return self.interaction_engine.evaluate(
+            event,
+            context,
+        )
+
+    
+
     def run(self) -> None:
         """Start the VYRA text interface."""
 
         print("VYRA: Online.")
         self.context_manager.start_session()
+
+        self.update_location_context()
 
         self.handle_startup_morning_briefing()
 

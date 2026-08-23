@@ -1,3 +1,6 @@
+from memory.database import get_important_places
+from location.models import ImportantPlace
+
 from location.models import (
     CurrentLocation,
     ImportantPlace,
@@ -34,6 +37,38 @@ class LocationManager:
         """Add a personally meaningful place."""
 
         self.important_places.append(place)
+
+    def load_important_places_from_database(self) -> None:
+        """Load persistent important places into memory."""
+
+        rows = get_important_places()
+
+        self.important_places = []
+
+        for row in rows:
+            (
+                place_id,
+                name,
+                place_type,
+                city,
+                region,
+                country,
+                importance,
+                notes,
+                created_at,
+            ) = row
+
+            self.important_places.append(
+                ImportantPlace(
+                    name=name,
+                    place_type=place_type,
+                    city=city,
+                    region=region,
+                    country=country,
+                    importance=importance,
+                    notes=notes,
+                )
+            )
 
     def get_important_places(
         self,
