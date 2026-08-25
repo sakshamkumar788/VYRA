@@ -70,6 +70,19 @@ def initialize_database() -> None:
             """
         )
 
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS intelligence_feedback (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                feedback_type TEXT NOT NULL,
+                story_category TEXT,
+                entity_names TEXT,
+                source TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        )
+
         connection.commit()
 
     migrate_tasks_table()
@@ -491,3 +504,74 @@ def get_important_places() -> list[tuple]:
         )
 
         return cursor.fetchall()
+
+def save_intelligence_feedback(
+    feedback_type: str,
+    story_category: str | None = None,
+    entity_names: tuple[str, ...] = (),
+    source: str | None = None,
+) -> None:
+    """Persist one intelligence feedback event."""
+
+    entities_text = ",".join(entity_names)
+
+    with sqlite3.connect(
+        DATABASE_PATH
+    ) as connection:
+        connection.execute(
+            """
+            INSERT INTO intelligence_feedback (
+                feedback_type,
+                story_category,
+                entity_names,
+                source
+            )
+            VALUES (?, ?, ?, ?)
+            """,
+            (
+                feedback_type,
+                story_category,
+                entities_text,
+                source,
+            ),
+        )
+
+        connection.commit()
+
+
+def get_intelligence_feedback() -> list[tuple]:
+    """Return all persisted intelligence feedback."""
+
+    with sqlite3.connect(
+        DATABASE_PATH
+    ) as connection:
+        cursor = connection.execute(
+            """
+            SELECT
+                id,
+                feedback_type,
+                story_category,
+                entity_names,
+                source,
+                created_at
+            FROM intelligence_feedback
+            ORDER BY id ASC
+            """
+        )
+
+        return cursor.fetchall()
+
+def clear_intelligence_feedback() -> None:
+    """Delete all intelligence feedback.
+
+    Intended for tests/development cleanup.
+    """
+
+    with sqlite3.connect(
+        DATABASE_PATH
+    ) as connection:
+        connection.execute(
+            "DELETE FROM intelligence_feedback"
+        )
+
+        connection.commit()

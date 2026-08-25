@@ -1,11 +1,15 @@
 from dataclasses import dataclass
 
 from intelligence.entities import EntityType, StoryEntity
+
+from intelligence.feedback import FeedbackProfile
+
 from intelligence.models import (
     IntelligenceStory,
     StoryUrgency,
 )
 from location.models import ImportantPlace
+
 
 
 @dataclass
@@ -19,6 +23,15 @@ class StoryScore:
 
 class IntelligenceScorer:
     """Scores information against VYRA's personal context."""
+
+    def __init__(
+        self,
+        feedback_profile: FeedbackProfile | None = None,
+    ) -> None:
+        self.feedback_profile = (
+            feedback_profile
+            or FeedbackProfile()
+        )
 
     INTEREST_ENTITY_TYPES = {
         EntityType.TECHNOLOGY,
@@ -105,6 +118,101 @@ class IntelligenceScorer:
         )
 
         return bonus, [reason]
+    
+    def _feedback_bonus(
+        self,
+        story: IntelligenceStory,
+    ) -> tuple[int, list[str]]:
+        """Calculate bounded personalization from user feedback."""
+
+        bonus = 0
+        reasons: list[str] = []
+
+        # ---------------------------------------------------------
+        # Category preference
+        # ---------------------------------------------------------
+
+        category = (
+            story.category.strip().lower()
+        )
+
+        category_bonus = (
+            self.feedback_profile
+            .category_bonus(category)
+        )
+
+        if category_bonus:
+            bonus += category_bonus
+
+            reasons.append(
+                f"user category preference: "
+                f"{category_bonus:+d}"
+            )
+
+        # ---------------------------------------------------------
+        # Entity preferences
+        # ---------------------------------------------------------
+
+        seen_entities: set[str] = set()
+
+        for entity in (
+            getattr(story, "entities", None)
+            or []
+        ):
+            entity_name = (
+                entity.name.strip().lower()
+            )
+
+            if not entity_name:
+                continue
+
+            if entity_name in seen_entities:
+                continue
+
+            seen_entities.add(entity_name)
+
+            entity_bonus = (
+                self.feedback_profile
+                .entity_bonus(entity_name)
+            )
+
+            if entity_bonus:
+                bonus += entity_bonus
+
+                reasons.append(
+                    f"user entity preference: "
+                    f"{entity.name} "
+                    f"{entity_bonus:+d}"
+                )
+
+        # ---------------------------------------------------------
+        # Source preference
+        # ---------------------------------------------------------
+
+        if story.source:
+            source_bonus = (
+                self.feedback_profile
+                .source_bonus(story.source)
+            )
+
+            if source_bonus:
+                bonus += source_bonus
+
+                reasons.append(
+                    f"user source preference: "
+                    f"{source_bonus:+d}"
+                )
+
+        # ---------------------------------------------------------
+        # Keep personalization bounded.
+        # ---------------------------------------------------------
+
+        bonus = max(
+            -50,
+            min(50, bonus),
+        )
+
+        return bonus, reasons
 
     def score(
         self,
@@ -200,6 +308,17 @@ class IntelligenceScorer:
 
         if story.personal_relevance >= 60:
             reasons.append("personally relevant")
+
+        # ---------------------------------------------------------
+        # Learned user preferences
+        # ---------------------------------------------------------
+
+        feedback_bonus, feedback_reasons = (
+            self._feedback_bonus(story)
+        )
+
+        score += feedback_bonus
+        reasons.extend(feedback_reasons)
 
         # ---------------------------------------------------------
         # Recognized user-interest entities

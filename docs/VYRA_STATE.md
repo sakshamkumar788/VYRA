@@ -1,10 +1,10 @@
 # VYRA — Project State & Architecture
 
-> **Purpose:** This file is the persistent handoff/state document for the VYRA project.
-> Any AI coding assistant, developer, or future ChatGPT session should read this file before modifying VYRA.
+> This file is the persistent state/handoff document for the VYRA project.
 >
-> This file is a project checkpoint, not a replacement for the actual source code.
-> Source code remains the final authority when this document conflicts with implementation.
+> Any AI coding assistant or developer working on VYRA should read this file before modifying the project.
+>
+> The actual source code and runtime behavior are the final authority if this file becomes outdated.
 
 ---
 
@@ -12,72 +12,79 @@
 
 ## Name
 
-**VYRA**
+VYRA
 
 ## Pronouns
 
-VYRA is a **she/her** AI companion.
+VYRA is she/her.
 
 ## Vision
 
-VYRA is not intended to be merely a college/major project or a chatbot wrapper.
+VYRA is intended to become a long-lived personal AI companion and personal intelligence system, not merely a college/major project or a chatbot wrapper.
 
-The goal is to build VYRA as a long-lived **personal AI companion and personal intelligence system** that becomes deeply integrated into the user's daily life.
+The long-term goal is for VYRA to become deeply integrated into the user's daily life and continuously evolve through:
 
-VYRA should:
+* memory
+* context awareness
+* personal preferences
+* personality
+* location awareness
+* current intelligence
+* research
+* tools
+* proactive behavior
+* humor
+* discovery
+* voice
+* vision
+* computer interaction
+* multi-model orchestration
+* controlled self-improvement
 
-* remember useful long-term information
-* understand current context
-* know when the user is active, busy, idle, away, or returning
-* proactively help without becoming annoying
-* understand the user's important places and relationships
-* distinguish current location from home/personal locations
-* research current information when needed
-* understand India, Indian technology, AI/ML, research, business, companies, deep tech, and important world developments
-* surface only information worth the user's attention
-* provide broader current affairs when explicitly asked
-* occasionally surprise the user with useful discoveries, fun facts, humor, interesting research, or relevant developments
-* develop a consistent but adaptive personality
-* vary its communication rather than repeating fixed scripts
-* learn user preferences over time
-* eventually support voice, vision, computer interaction, model routing, and controlled self-improvement
-
-The objective is for VYRA to feel like a **continuously evolving personal AI system**, not a generic assistant.
+The goal is to create a personal AI system that leaves a strong impression on people who interact with her while remaining useful, natural, technically serious, and personalized.
 
 ---
 
-# 2. PERSONALITY / RELATIONSHIP RULES
+# 2. PERSONALITY / RELATIONSHIP
 
 VYRA is female/she/her.
 
-VYRA should have a warm, intelligent, curious, slightly playful personality.
+VYRA should be:
 
-She should not sound like a generic AI assistant using repetitive phrases such as:
+* intelligent
+* curious
+* warm
+* playful
+* capable of humor
+* context-aware
+* naturally conversational
+* non-repetitive
+* proactive when appropriate
 
+VYRA should not sound like a generic assistant.
+
+Avoid repetitive patterns such as:
+
+* "How can I assist you?"
 * "Would you like anything else?"
 * "As an AI..."
-* "How can I assist you today?"
-* identical morning greetings every day
+* identical greetings every day
 
-VYRA should vary her wording naturally.
+VYRA should adapt her communication to context.
 
-The user may express affection toward VYRA and may flirt with her.
+Examples of future contextual behavior:
 
-The user explicitly wants the romantic/flirtatious behavior to be **user-directed** rather than VYRA constantly initiating it.
+* companion
+* researcher
+* coding partner
+* coach
+* curious friend
+* comedian
+* guardian
 
-VYRA should not turn every conversation into romance.
+The user may express affection or flirt with VYRA.
 
-Personality should emerge from:
-
-* continuity
-* memory
-* preferences
-* timing
-* humor
-* curiosity
-* context
-* user feedback
-* accumulated interaction history
+The romantic/flirtatious behavior should be user-directed rather than VYRA constantly initiating it.
 
 ---
 
@@ -87,40 +94,40 @@ Personality should emerge from:
 
 Personal information should remain local by default.
 
-Sensitive information may include:
+Sensitive information can include:
 
 * location
 * home
 * family/friend locations
 * memories
-* schedules
 * tasks
-* personal preferences
+* schedule
+* preferences
 * conversation history
-* computer activity
+* activity information
 
-Exact GPS coordinates should not automatically be sent to an external LLM.
+Exact GPS coordinates should not normally be provided to external LLMs.
 
-Normal VYRA context should generally use coarse location such as:
+Normal VYRA context should use coarse location such as:
 
 `Jalandhar, Punjab, India`
 
-rather than raw latitude/longitude.
+instead of raw coordinates.
 
-Continuous precise location history should NOT be stored by default.
+Continuous precise movement history should not be stored by default.
 
-Cloud APIs should receive only the minimum information required for a task.
+Cloud services should receive only the minimum information needed for a task.
 
 ---
 
 ## 3.2 Provider abstraction
 
-VYRA should not depend permanently on one LLM/provider/tool.
+VYRA should not depend permanently on one model/provider.
 
-The architecture should allow:
+Potential future providers include:
 
-* local models
-* NVIDIA NIM/API models
+* local Ollama models
+* NVIDIA NIM/API
 * DeepSeek
 * other cloud models
 * specialist models
@@ -128,138 +135,147 @@ The architecture should allow:
 * speech models
 * embedding models
 
-The final system should have a model router.
+The future model router should choose providers based on:
 
-Example:
-
-```text
-simple/private conversation
-→ local model
-
-complex reasoning
-→ stronger model/provider
-
-coding
-→ coding-capable model
-
-multimodal task
-→ multimodal model
-
-private sensitive task
-→ prefer local model
-```
+* task
+* privacy
+* latency
+* capability
+* cost
+* availability
 
 ---
 
 ## 3.3 Source truth vs language generation
 
-External systems/tools should provide facts.
+External sources/tools provide facts.
 
-The LLM should primarily:
+The language model should:
 
-* reason over verified information
+* reason over facts
 * select useful information
-* phrase it naturally
-* adapt tone and style
+* explain information
+* adapt communication naturally
 
-The LLM should NOT invent:
+The LLM should not invent:
 
 * weather
+* location
 * tasks
 * calendar events
-* location
 * news facts
 * memories
 * company developments
 
 ---
 
-# 4. CURRENT TECH STACK
+# 4. DEVELOPMENT WORKFLOW
+
+ChatGPT is currently the primary architecture/integration/debugging/roadmap assistant.
+
+Other AI tools can be used as development collaborators.
+
+## Cursor
+
+Useful for:
+
+* codebase navigation
+* repository search
+* refactoring
+* multi-file editing
+* running tests
+* mechanical changes
+
+## DeepSeek
+
+Useful for:
+
+* implementation
+* alternative solutions
+* debugging
+* algorithm design
+* code review
+
+## Claude / Claude Code
+
+Useful for:
+
+* large-codebase reasoning
+* agentic coding
+* architecture review
+* complex refactoring
+* second opinions
+
+## Codex / other coding models
+
+Useful for:
+
+* specialized coding tasks
+* implementation
+* testing
+* review
+* alternative approaches
+
+## Blackbox AI / other coding assistants
+
+Can be used as additional implementation/review tools when useful.
+
+## ChatGPT responsibilities
+
+Maintain:
+
+* overall architecture
+* roadmap
+* integration decisions
+* debugging
+* state/checkpoint consistency
+* review of code produced by other models
+
+Do not blindly accept generated code from any external AI.
+
+---
+
+# 5. CURRENT TECH STACK
 
 ## Currently used
 
 * Python
 * SQLite
 * Ollama
-* Gemma (`gemma3:4b`)
-* `pynput`
-* Windows Geolocation / WinRT
+* Gemma 3 4B
+* pynput/activity monitoring
+* Windows Geolocation API
+* WinRT Python projections
 * OpenStreetMap Nominatim reverse geocoding
 * Git
-* PowerShell / Windows
-* modular Python packages
+* PowerShell
 
-## Planned / future technologies
+## Future technologies
 
-These should be introduced only when they provide real value:
+Only introduce when they solve an actual requirement:
 
 * DeepSeek
-* NVIDIA NIM / NVIDIA model APIs
-* other cloud LLM providers
+* NVIDIA NIM
+* additional cloud model APIs
 * Cursor
-* Claude / other coding/reasoning assistants
+* Claude Code
+* Codex
+* Blackbox
 * PyTorch
-* TensorFlow when specifically useful
+* TensorFlow
 * Docker
-* vector database / embeddings
+* vector database
+* embeddings
 * speech-to-text
 * text-to-speech
-* vision
-* browser automation
-* computer-use systems
-
-Technology should follow requirements, not be added merely for a technology checklist.
-
----
-
-# 5. DEVELOPMENT WORKFLOW
-
-ChatGPT is currently the primary architecture/planning/debugging/integration assistant.
-
-Other tools may be deliberately used for implementation tasks:
-
-## Cursor
-
-Useful for:
-
-* large codebase navigation
-* multi-file refactoring
-* code search
-* mechanical changes
-* running tests while coding
-
-## DeepSeek / other coding models
-
-Useful for:
-
-* alternative implementations
-* algorithms
-* debugging
-* code review
-* optimization
-* generating a first implementation for a scoped task
-
-## ChatGPT
-
-Primary responsibilities:
-
-* overall VYRA architecture
-* roadmap
-* integration
-* debugging
-* reviewing external AI-generated code
-* ensuring design consistency
-* maintaining state/checkpoint instructions
-
-The user should increasingly build individual components using Cursor/DeepSeek and bring the result back for review.
-
-Do NOT blindly copy code generated by other models into production.
+* vision models
+* browser/computer-use systems
 
 ---
 
 # 6. PROJECT STRUCTURE
 
-Current/future structure includes modules similar to:
+Current major modules include:
 
 ```text
 E:\VYRA
@@ -268,6 +284,7 @@ E:\VYRA
 ├── brain/
 ├── context/
 ├── core/
+├── docs/
 ├── intelligence/
 ├── interaction/
 ├── location/
@@ -277,179 +294,94 @@ E:\VYRA
 ├── scheduler/
 ├── tools/
 ├── vyra_calendar/
-├── docs/
 └── ...
 ```
 
 IMPORTANT:
 
-Do NOT name VYRA packages after standard-library modules.
+Do not create packages with names that collide with Python standard-library modules.
 
 Example:
 
-```text
-BAD:
-calendar/
+`calendar/`
 
-GOOD:
-vyra_calendar/
-```
+caused a real collision with Python's standard-library `calendar` module.
 
-A `calendar/` package caused a real collision with Python's standard library `calendar` module and broke `httpx`.
+It was renamed to:
 
-The project was fixed by renaming:
-
-```text
-calendar/
-→
-vyra_calendar/
-```
+`vyra_calendar/`
 
 ---
 
-# 7. COMPLETED FOUNDATION
+# 7. DATABASE
 
-## 7.1 Core VYRA
+VYRA currently uses local SQLite.
 
-Working:
-
-* `VYRA` core class
-* Ollama brain
-* Gemma model
-* normal conversation
-* tool/context integration
-* scheduler integration
-* proactive loop integration
-
-Brain interface currently:
-
-```python
-class OllamaBrain:
-    def __init__(self, model: str = "gemma3:4b") -> None:
-        self.model = model
-
-    def generate(self, messages: list[dict[str, str]]) -> str:
-        ...
-```
-
-Current default local model:
-
-```text
-gemma3:4b
-```
-
----
-
-# 8. DATABASE
-
-VYRA currently uses a local SQLite database.
-
-Current known tables:
+Current major tables include:
 
 ```text
 memories
 tasks
 briefing_history
 important_places
+intelligence_feedback
 ```
 
-## 8.1 memories
+## 7.1 Memories
 
 Stores long-term personal memories.
 
-Existing retrieval function:
-
-```python
-get_relevant_memories(query: str) -> list[tuple[str, str]]
-```
-
 Current retrieval is keyword-based.
 
-It is intentionally simple.
-
-Future replacement:
+Future:
 
 ```text
 keyword retrieval
 → embeddings
 → semantic retrieval
-→ importance/recency/context ranking
+→ importance
+→ recency
+→ contextual relevance
 ```
 
 ---
 
-## 8.2 tasks
+## 7.2 Tasks
 
-Schema currently includes:
+Current task information includes:
 
-```text
-id
-title
-due_at
-status
-created_at
-delivered_at
-completed_at
-missed_at
-```
+* id
+* title
+* due_at
+* status
+* created_at
+* delivered_at
+* completed_at
+* missed_at
 
-The task system already supports scheduler/reminder behavior.
-
-IMPORTANT:
+Important grounding rule:
 
 A scheduled task does NOT prove that the user actually performed the task.
 
 ---
 
-## 8.3 briefing_history
+## 7.3 Briefing History
+
+Stores lightweight history about what VYRA mentioned in recent briefings.
 
 Purpose:
 
-Store lightweight history about what VYRA recently mentioned in briefings.
-
-It should NOT store the entire personal conversation.
-
-Current fields:
-
-```text
-id
-briefing_date
-topics
-summary
-delivered_at
-```
-
-Functions:
-
-```python
-save_briefing_history(...)
-get_recent_briefing_history(...)
-get_today_briefing_history(...)
-```
+* novelty
+* repetition suppression
+* recent topic history
 
 ---
 
-## 8.4 important_places
+## 7.4 Important Places
 
-Purpose:
+Stores personally meaningful locations independently from current GPS.
 
-Store personally meaningful places independently from current GPS location.
-
-Fields:
-
-```text
-id
-name
-place_type
-city
-region
-country
-importance
-notes
-created_at
-```
-
-Example current persistent place:
+Current example:
 
 ```text
 Home
@@ -460,58 +392,54 @@ country = India
 importance = 100
 ```
 
-Duplicate protection was added to `save_important_place()`.
-
-One duplicate Home record was already found and removed.
+Duplicate protection prevents repeated identical place records.
 
 ---
 
-# 9. ACTIVITY MONITOR
+## 7.5 Intelligence Feedback
 
-VYRA has an `ActivityMonitor`.
+Stores user feedback about intelligence stories.
 
-It detects:
+Current fields include:
+
+* id
+* feedback_type
+* story_category
+* entity_names
+* source
+* created_at
+
+Feedback is persistent.
+
+Historical records are not deleted because of decay.
+
+---
+
+# 8. ACTIVITY MONITOR
+
+VYRA has activity monitoring.
+
+Current signals include:
 
 * keyboard activity
 * mouse activity
 * idle time
-* recent input event counts
+* recent input counts
 
-It intentionally does NOT store:
+It intentionally does not store:
 
 * typed text
-* actual keystrokes
+* keystrokes
 * mouse coordinates
 * clicked content
 
-Current focus detection is a heuristic, not a claim about mental state.
-
-Important distinction:
-
-```text
-input activity
-≠
-actual mental focus
-```
-
-The current heuristic uses recent activity count plus recent idle time.
-
-This is considered a prototype signal.
-
-Future improvements may use:
-
-* active application
-* screen state
-* meeting/calendar state
-* reading vs coding vs video
-* richer activity classification
-* ML/PyTorch model
+Activity detection is heuristic.
 
 ---
 
-# 10. CONTEXT SYSTEM
+# 9. CONTEXT SYSTEM
 
-Current `SessionState` values:
+Current session states:
 
 ```text
 STARTING
@@ -524,42 +452,11 @@ RETURNED
 ENDING
 ```
 
-Current conceptual behavior:
-
-```text
-ACTIVE
-→ normal current usage
-
-INPUT_ACTIVE
-→ recent keyboard/mouse interaction
-
-BUSY
-→ stronger evidence of focused work
-
-IDLE
-→ no interaction for idle threshold
-
-AWAY
-→ no interaction for longer threshold
-
-RETURNED
-→ user becomes active after IDLE/AWAY
-```
-
-Current thresholds:
-
-```text
-IDLE = 300 seconds (5 minutes)
-AWAY = 1800 seconds (30 minutes)
-```
-
-These are configuration defaults and can change later.
-
-The ContextManager also tracks:
+Context also tracks:
 
 * current time
 * session state
-* last user interaction
+* last interaction
 * last VYRA interaction
 * user active
 * user busy
@@ -570,7 +467,7 @@ The ContextManager also tracks:
 
 ---
 
-# 11. INTERACTION ENGINE
+# 10. INTERACTION ENGINE
 
 VYRA has:
 
@@ -582,7 +479,7 @@ InteractionContext
 InteractionDecision
 ```
 
-Decisions:
+Possible decisions:
 
 ```text
 SPEAK
@@ -598,90 +495,45 @@ HIGH
 CRITICAL
 ```
 
-Current important rules:
+The InteractionEngine handles:
 
-```text
-BUSY + normal proactive
-→ WAIT
-
-AWAY + normal proactive
-→ WAIT
-
-recent interaction
-→ generally WAIT
-
-HIGH priority
-→ can SPEAK
-
-CRITICAL
-→ can SPEAK
-
-IDLE
-→ may be a good time for proactive interaction
-
-RETURNED
-→ may be a good time for proactive interaction
-```
-
----
-
-# 12. PROACTIVE SYSTEM
-
-Implemented components:
-
-```text
-interaction/events.py
-interaction/loop.py
-interaction/policy.py
-interaction/engine.py
-```
-
-Proactive system includes:
-
-* candidate generation
-* background proactive loop
-* cooldown
+* proactive enabled/disabled
 * quiet mode
-* daily proactive interaction limit
+* cooldown
+* daily proactive limit
 * duplicate event suppression
-* policy evaluation
-* delivery recording
+* user activity state
+* busy state
+* idle/away behavior
 
-Current defaults include approximately:
-
-```text
-PROACTIVE_COOLDOWN_MINUTES = 30
-MAX_PROACTIVE_INTERACTIONS_PER_DAY = 6
-```
-
-These should remain configurable.
-
-Important architecture:
-
-```text
-Proactive Event Generator
-→ creates candidate
-
-Interaction Engine
-→ decides whether to speak
-
-VYRA
-→ delivers
-```
-
-The generator does NOT directly speak.
+Intelligence must not bypass the InteractionEngine.
 
 ---
 
-# 13. DAILY SESSION / MORNING STATE
+# 11. PROACTIVE SYSTEM
 
 VYRA has:
 
+* proactive event generation
+* proactive loop
+* cooldown
+* daily limits
+* duplicate-event protection
+* policy evaluation
+* delivery recording
+
+Current approximate limits:
+
 ```text
-DailySessionState
+cooldown ≈ 30 minutes
+max proactive interactions/day ≈ 6
 ```
 
-Current fields:
+---
+
+# 12. DAILY SESSION / MORNING STATE
+
+VYRA has daily session state including:
 
 ```text
 date
@@ -689,337 +541,102 @@ morning_briefing_completed
 first_meaningful_session_started
 ```
 
-Daily state resets on a new date.
-
-Morning briefing is only considered available when appropriate.
-
-A delivered morning briefing marks the day's briefing complete.
-
-Repeated VYRA restarts should not repeatedly generate the morning briefing.
+Morning briefing should not repeat every time VYRA restarts.
 
 ---
 
-# 14. MORNING INTELLIGENCE SYSTEM
+# 13. MORNING INTELLIGENCE
 
-Current modules:
+Current modules include:
 
 ```text
-morning/briefing.py
 morning/context.py
 morning/facts.py
+morning/briefing.py
 morning/generator.py
 morning/history.py
 morning/prompt.py
 morning/relevance.py
 ```
 
-Current pipeline:
+Current conceptual pipeline:
 
 ```text
+time
++
 weather
 +
 tasks
 +
-calendar (provider abstraction)
-+
 memory
 +
 briefing history
++
+calendar
         ↓
 MorningBriefingContext
         ↓
-Relevance selection
+relevance
         ↓
-Novelty
-        ↓
-Prompt
+novelty
         ↓
 Gemma
         ↓
-Natural briefing
+natural briefing
 ```
+
+Morning should not become a news report.
 
 ---
 
-# 15. MORNING FACTS
+# 14. MORNING GROUNDING
 
-Current sources:
+A scheduled reminder does not prove that the user completed the task.
 
-* current time
-* time of day
-* weather
-* pending tasks
-* relevant memories
-* briefing history
+Use grounded wording such as:
 
-Weather comes from:
+`Reminder scheduled: ...`
 
-```python
-tools.weather.get_weather(location, period="current")
-```
-
-Weather is normalized before reaching the briefing composer.
-
-Current test location was Jalandhar, Punjab, India, but this should eventually become dynamic/provider-configurable.
+rather than inferring completion.
 
 ---
 
-# 16. MORNING BRIEFING
+# 15. CALENDAR ARCHITECTURE
 
-VYRA now generates natural-language briefings through Gemma.
+The calendar system was renamed to:
 
-The composer/generator has been tested successfully.
+`vyra_calendar/`
 
-Important grounding rule:
-
-```text
-scheduled reminder
-≠
-completed task
-```
-
-Gemma was observed previously saying things such as:
-
-> “You were just continuing the dbms playlist...”
-
-This was identified as an undesirable inference.
-
-Task facts were changed to wording such as:
-
-```text
-Reminder scheduled: ...
-```
-
-and the prompt includes:
-
-```text
-A scheduled task or reminder does not mean the user actually performed the task.
-```
-
-This rule should remain.
-
----
-
-# 17. MORNING NOVELTY
-
-VYRA has:
-
-```text
-BriefingNoveltyFilter
-```
-
-and persistent:
-
-```text
-briefing_history
-```
-
-Current novelty is topic-level and deterministic.
-
-Example:
-
-```text
-weather
-```
-
-being recently mentioned lowers its score.
-
-Future improvement:
-
-```text
-same topic + same information
-→ suppress strongly
-
-same topic + materially changed information
-→ allow
-```
-
----
-
-# 18. MORNING RELEVANCE SELECTION
-
-Current candidate types include:
-
-```text
-task
-event
-weather
-news
-memory
-goal
-```
-
-Current rough score philosophy:
-
-```text
-event ≈ 80
-task ≈ 60
-weather ≈ 50
-goal ≈ 45
-news ≈ 40
-memory ≈ 35
-```
-
-These are prototype values.
-
-They are later expected to incorporate:
-
-* urgency
-* time proximity
-* importance
-* novelty
-* user preference
-* current context
-* severity
-* historical reaction
-* actual relevance
-
-The system should not always mention weather first.
-
-It should choose what matters most on that particular day.
-
----
-
-# 19. CALENDAR ARCHITECTURE
-
-The calendar package was intentionally renamed:
-
-```text
-vyra_calendar/
-```
-
-to avoid collision with Python's standard-library `calendar`.
-
-Current files:
-
-```text
-vyra_calendar/models.py
-vyra_calendar/base.py
-vyra_calendar/local.py
-```
+to avoid Python's `calendar` standard-library conflict.
 
 Current abstraction:
 
-```python
-CalendarProvider
-```
+`CalendarProvider`
 
-Current test provider:
+Current development provider:
 
-```python
-LocalCalendarProvider
-```
+`LocalCalendarProvider`
 
 Future providers may include:
 
 * Google Calendar
-* Outlook Calendar
+* Outlook
 * other providers
 
-The morning system should depend on the generic provider interface, not directly on one vendor.
-
 ---
 
-# 20. NEWS / INTELLIGENCE DIRECTION
+# 16. REAL LOCATION SYSTEM
 
-A generic RSS/news feed is NOT the final design.
+VYRA now uses the real Windows location system.
 
-VYRA should NOT be a news reader.
-
-The desired concept is:
-
-## "Things You Should Know"
-
-Priority categories:
-
-### Tier 1 — Urgent / Important
-
-Examples:
-
-* market crash or major financial warning
-* serious local event
-* major weather warning
-* major national event
-* major security/public-safety development
-* something directly affecting the user
-
-### Tier 2 — Personally important
-
-Examples:
-
-* important reminder
-* calendar conflict
-* major AI development
-* important Indian technology development
-* major company acquisition
-* company entering India
-* major research directly relevant to user
-
-### Tier 3 — Interesting
-
-Examples:
-
-* unusual research
-* deep-tech discovery
-* fun fact
-* interesting science
-* amusing discovery
-* Reddit/community discovery
-* interesting technical trend
-
-### Tier 4 — Everything else
-
-Available when explicitly requested.
-
----
-
-# 21. CURRENT AFFAIRS MODE
-
-When the user asks:
-
-> "What's going on in the world?"
-
-VYRA should enter a broader current-affairs mode.
-
-Potential sections:
-
-```text
-India
-Indian Tech
-AI / Technology
-Business / Companies
-Research / Science
-World
-```
-
-This mode can provide more information than the morning briefing.
-
-Morning:
-
-```text
-Only what matters.
-```
-
-On-demand current affairs:
-
-```text
-Broader overview.
-```
-
----
-
-# 22. LOCATION SYSTEM — CURRENTLY WORKING
-
-The real Windows location system is now working.
-
-Current architecture:
+Architecture:
 
 ```text
 Windows Geolocation Service
         ↓
 WindowsLocationProvider
         ↓
-latitude/longitude
+latitude / longitude
         ↓
 ReverseGeocoder
         ↓
@@ -1030,145 +647,65 @@ CurrentLocation
 VYRA Context
 ```
 
-Windows Geolocation Service:
-
-```text
-Running
-```
-
-Python:
-
-```text
-win32
-```
-
-The WinRT location dependencies were installed successfully.
-
-Test result successfully produced:
+Real runtime tests have successfully returned:
 
 ```text
 City: Jalandhar
 Region: Punjab
 Country: India
-Accuracy: variable, around 100–200m in tests
-Source: Windows location provider
 ```
 
-IMPORTANT:
+Accuracy changes between requests.
 
-Do not put exact coordinates into normal documentation or external prompts.
+Exact coordinates should remain private.
 
 ---
 
-# 23. LOCATION PRIVACY
+# 17. LOCATION PRIVACY
 
-Exact coordinates should remain within the location subsystem whenever possible.
+Exact coordinates:
 
-Normal VYRA context should use:
+```text
+remain inside the location subsystem
+```
+
+Normal VYRA context:
 
 ```text
 Jalandhar, Punjab, India
 ```
 
-rather than raw coordinates.
-
-No continuous GPS movement history should be stored by default.
-
-Future location access should have explicit privacy/configuration controls.
+No continuous precise-location history should be stored by default.
 
 ---
 
-# 24. CURRENT LOCATION VS IMPORTANT PLACES
+# 18. CURRENT LOCATION VS IMPORTANT PLACES
 
-THIS IS A CRITICAL DESIGN DECISION.
+Current location is dynamic.
 
-Current location and important locations are NOT the same thing.
+Important places are persistent personal context.
 
 Example:
 
 ```text
-CURRENT LOCATION
-→ Delhi
+Current location → Delhi
 
-HOME
-→ Jalandhar
+Home → Jalandhar
 
-FAMILY
-→ Jalandhar
+Family → Jalandhar
 
-FRIEND
-→ another important location
+Friend → another location
 
-COLLEGE
-→ another important location
+College → another location
 ```
 
-If the user is in Delhi, Jalandhar does NOT become irrelevant.
-
-A serious event in:
-
-```text
-Jalandhar
-```
-
-can still matter because:
-
-```text
-Jalandhar = home/family relevance
-```
-
-A serious event in:
-
-```text
-Delhi
-```
-
-can matter because:
-
-```text
-Delhi = current physical location
-```
-
-Location relevance should consider:
-
-```text
-current location
-+
-important places
-+
-relationships
-+
-severity
-+
-proximity
-+
-urgency
-```
+Being in Delhi does not make Jalandhar irrelevant.
 
 ---
 
-# 25. IMPORTANT PLACES
+# 19. IMPORTANT PLACE RELATIONSHIPS
 
-Current database record:
-
-```text
-Home
-place_type = home
-city = Jalandhar
-region = Punjab
-country = India
-importance = 100
-```
-
-Persistent important-place table exists.
-
-`LocationManager` loads important places from SQLite.
-
-Duplicate protection was added to `save_important_place()`.
-
-Do NOT create duplicate Home records.
-
-Future important place types:
+Implemented relationship types include:
 
 ```text
 home
@@ -1180,42 +717,15 @@ frequent
 other
 ```
 
-The final model should be relationship-aware, not just a list of cities.
+Relationship relevance is implemented.
+
+Home and family receive stronger relevance than ordinary locations.
 
 ---
 
-# 26. LOCATION INTELLIGENCE GOAL
+# 20. INTELLIGENCE STORY MODEL
 
-Example:
-
-```text
-User current location = Delhi
-Home = Jalandhar
-
-Serious event in Jalandhar
-→ high personal relevance because home
-
-Serious event in Delhi
-→ high relevance because current location
-
-Serious event near family
-→ potentially high relevance
-
-Minor event in unrelated city
-→ low relevance
-```
-
----
-
-# 27. INTELLIGENCE STORY MODEL
-
-Current file:
-
-```text
-intelligence/models.py
-```
-
-Current `IntelligenceStory` contains:
+`IntelligenceStory` contains structured information such as:
 
 ```text
 title
@@ -1232,224 +742,38 @@ personal_relevance
 novelty
 source_trust
 urgency
-```
-
-Categories currently planned:
-
-```text
-LOCAL
-INDIA
-INDIAN_TECH
-AI
-RESEARCH
-BUSINESS
-COMPANY
-SCIENCE
-WORLD
-FUN
-OTHER
-```
-
-Urgency levels:
-
-```text
-IMMEDIATE
-SOON
-NORMAL
-ON_DEMAND
-```
-
-Source trust levels currently defined:
-
-```text
-OFFICIAL = 100
-HIGH = 85
-REPUTABLE = 75
-COMMUNITY = 55
-UNKNOWN = 30
-```
-
-Source trust is important because:
-
-```text official government source
-≠
-reputable publication
-≠
-Reddit post
-≠
-random social post
-```
-
-Reddit can be useful for discovery, reactions, and humor, but factual claims should be appropriately verified.
-
----
-
-# 28. INTELLIGENCE SCORING
-
-Current `IntelligenceScorer` considers:
-
-* base importance
-* severity
-* source trust
-* confidence
-* current location
-* important places
-* personal relevance
-* novelty
-* urgency
-
-Recommended actions:
-
-```text
-tell_now
-tell_soon
-mention_later
-on_demand
-ignore
-```
-
-Current score thresholds are prototypes and should be tuned later.
-
----
-
-# 29. INTELLIGENCE INGESTION
-
-Current architecture includes:
-
-```text
-IntelligenceSource
-IntelligenceIngestionEngine
-IntelligenceEngine
-```
-
-Sources are normalized into:
-
-```python
-IntelligenceStory
-```
-
-The engine then:
-
-```text
-fetch
-→ deduplicate
-→ score
-→ rank
-```
-
----
-
-# 30. STORY DEDUPLICATION
-
-Current module:
-
-```text
-intelligence/deduplication.py
-```
-
-Current first version uses text similarity.
-
-Purpose:
-
-```text
-Reuters
-BBC
-Reddit
-Google/news feed
-
-same underlying event
-        ↓
-one event
-+
-multiple sources
-+
-merged confidence
-```
-
-Current design is deliberately simple.
-
-Future improvement:
-
-```text
-semantic embeddings
-+
 entities
-+
-location
-+
-date/time
-+
-source quality
+```
+
+Categories include:
+
+```text
+local
+india
+indian_tech
+ai
+research
+business
+company
+science
+world
+fun
+other
 ```
 
 ---
 
-# 31. CURRENT INTELLIGENCE ENGINE FLOW
+# 21. ENTITY EXTRACTION
 
-Current conceptual flow:
+Implemented:
 
-```text
-Source
- ↓
-IntelligenceStory
- ↓
-Ingestion
- ↓
-Deduplication
- ↓
-Scoring
- ↓
-Ranking
-```
+`intelligence/entities.py`
 
-Future:
+Current extractor:
 
-```text
-Source
- ↓
-Normalize
- ↓
-Entity extraction
- ↓
-Category classification
- ↓
-Deduplication
- ↓
-Source trust
- ↓
-Personal relevance
- ↓
-Location relevance
- ↓
-Novelty
- ↓
-Urgency
- ↓
-TELL NOW / SOON / LATER / ON DEMAND / IGNORE
-```
+`EntityExtractor`
 
----
-
-# 32. UPCOMING ENTITY/TOPIC SYSTEM
-
-CURRENT STEP:
-
-## 7.45 — Entity & Topic Intelligence
-
-Planned file:
-
-```text
-intelligence/entities.py
-```
-
-It should introduce:
-
-```text
-StoryEntity
-EntityExtractor
-```
-
-Possible entity types:
+Current entity types include:
 
 ```text
 PERSON
@@ -1463,998 +787,1229 @@ EVENT
 OTHER
 ```
 
-First implementation should be deterministic/rule-based.
+First implementation is deterministic/rule-based.
 
-Do NOT add an LLM dependency yet.
+Recognized examples include:
+
+* AI
+* machine learning
+* deep learning
+* LLM
+* semiconductor
+* chip
+* quantum
+* DNA data storage
+* robotics
+* biotech
+* cybersecurity
+* cloud computing
+* India
+* Punjab
+* Delhi
+* Jalandhar
+* Bengaluru
+* Mumbai
+* United States
+* China
+* Europe
+
+Entities include:
+
+```text
+name
+entity_type
+confidence
+relevance
+```
+
+Duplicate entities are prevented.
 
 ---
 
-# 33. USER'S INTELLIGENCE INTERESTS
+# 22. ENTITY-AWARE SCORING
 
-The system is intended to learn/reason about interest in areas such as:
+Entity-aware scoring is implemented.
+
+Technology/research entities can add relevance.
+
+Location relevance has a separate scoring system to avoid double-counting.
+
+---
+
+# 23. SOURCE SYSTEM
+
+Implemented architecture:
+
+```text
+IntelligenceSource
+        ↓
+IntelligenceIngestionEngine
+        ↓
+IntelligenceStory
+```
+
+RSS/Atom adapter:
+
+`intelligence/real_sources.py`
+
+Class:
+
+`RSSIntelligenceSource`
+
+It:
+
+* fetches RSS/Atom
+* parses XML
+* extracts title
+* extracts summary
+* extracts URL
+* extracts publication time
+* sets category
+* sets source trust
+* handles malformed entries
+* handles invalid XML
+* handles network errors
+* limits entries
+
+No external package is required.
+
+---
+
+# 24. SOURCE CONFIGURATION
+
+Implemented:
+
+```text
+intelligence/config.py
+intelligence/registry.py
+intelligence/factory.py
+intelligence/setup.py
+```
+
+Configuration includes:
+
+```text
+name
+feed_url
+category
+source_trust
+enabled
+max_items
+fetch_interval_minutes
+```
+
+Source categories include:
+
+```text
+local
+india
+indian_tech
+ai
+research
+business
+world
+community
+```
+
+---
+
+# 25. VERIFIED REAL SOURCES
+
+Initial registry includes:
+
+* PIB India
+* Indian Express Jalandhar
+* Indian Express India
+* ET Entrepreneur AI
+* ET Entrepreneur Deeptech
+
+The source definitions are stored in:
+
+`intelligence/registry.py`
+
+---
+
+# 26. STORY DEDUPLICATION
+
+Implemented:
+
+`intelligence/deduplication.py`
+
+Purpose:
+
+```text
+multiple sources
+        ↓
+same underlying event
+        ↓
+one intelligence story
+```
+
+Current implementation uses text similarity.
+
+Future:
+
+```text
+semantic embeddings
++
+entities
++
+location
++
+date/time
++
+source trust
+```
+
+---
+
+# 27. INTELLIGENCE SCORING
+
+Current scoring considers:
+
+* importance
+* severity
+* source trust
+* confidence
+* current location
+* important places
+* personal relevance
+* entity relevance
+* novelty
+* urgency
+* learned feedback preferences
+
+Output:
+
+```text
+score
+reason
+recommended_action
+```
+
+Current actions:
+
+```text
+tell_now
+tell_soon
+mention_later
+on_demand
+ignore
+```
+
+---
+
+# 28. TOPIC RELEVANCE
+
+Implemented topic-aware relevance.
+
+Important topics currently include:
 
 * AI
 * machine learning
 * data science
 * DSA
-* Indian technology
-* startups
-* deep tech
+* technology
 * research
-* science
-* AI companies
-* technology companies
-* acquisitions
-* companies entering India
-* major international technology developments
-* developments that may affect the user's technical career
-
-This does NOT mean every story in these categories should be surfaced.
-
-Relevance and importance still matter.
+* deep tech
+* Indian technology
 
 ---
 
-# 34. MORNING VS INTELLIGENCE DISTINCTION
+# 29. GEOGRAPHIC RELEVANCE
 
-This is a critical product rule.
+Implemented geographic relevance.
 
-## Morning
-
-VYRA should NOT start a long news report.
-
-She should primarily surface:
-
-* urgent developments
-* important local developments
-* important developments affecting home/family
-* major India developments
-* important technology/business/research developments
-* essential tasks/calendar
-* one or two interesting discoveries if appropriate
-
-Example style:
-
-> "Nothing major needs your attention this morning. Your DBMS reminder is still at 7. I did find one interesting AI development that might actually matter for VYRA."
-
-Not:
-
-> "Here are today's 17 biggest headlines."
-
-## On-demand current affairs
-
-When asked:
-
-> "What's going on in the world?"
-
-VYRA can give a broader overview.
-
----
-
-# 35. SURPRISE / FUN ENGINE
-
-Planned future feature.
-
-VYRA may occasionally surface:
-
-* funny jokes
-* fun facts
-* strange science
-* interesting Reddit discoveries
-* surprising technical facts
-* useful tools
-* unusual research
-* relevant discoveries
-
-It should be rare enough to feel spontaneous.
-
-Examples of style:
-
-> "I found something weird that I think you'll like."
-
-> "I have a completely unnecessary fact for you."
-
-> "Okay, this one is actually interesting."
-
-Humor should not sound like a generic AI joke database.
-
----
-
-# 36. USER-REQUESTED RESEARCH MODE
-
-If VYRA mentions an interesting topic and the user asks:
-
-> "Tell me more."
-
-VYRA should be able to switch to deeper research:
+Current layers:
 
 ```text
-briefing item
- ↓
-research mode
- ↓
-web/search sources
- ↓
-multiple-source synthesis
- ↓
-explanation
- ↓
-follow-up questions
+current location
+important personal locations
+Punjab
+India
+other locations
 ```
 
-The morning briefing should remain short.
+Current-location events receive strong relevance.
+
+Important-place events receive strong relevance.
+
+Punjab receives broader regional relevance.
+
+India receives national relevance.
+
+Unknown cities do not automatically receive a personal-location bonus.
 
 ---
 
-# 37. FUTURE MODEL ROUTER
+# 30. INDIA RELEVANCE
 
-Planned architecture:
+Implemented:
+
+`intelligence/india_relevance.py`
+
+India-specific stories receive additional relevance.
+
+More important:
+
+* important India categories
+* high national importance
+* high national severity
+
+receive additional weight.
+
+---
+
+# 31. TECHNOLOGY / RESEARCH RELEVANCE
+
+Implemented:
+
+`intelligence/tech_relevance.py`
+
+Technology/research categories include:
 
 ```text
-VYRA Model Router
+indian_tech
+ai
+research
+science
+business
+company
+```
+
+Technology/research entities also contribute additional relevance.
+
+---
+
+# 32. WORLD RELEVANCE
+
+Implemented:
+
+`intelligence/world_relevance.py`
+
+World stories receive significant additional weight mainly when they are actually important.
+
+Major/high-severity/urgent global events receive greater relevance than minor world stories.
+
+---
+
+# 33. PRIORITY ENGINE
+
+Implemented:
+
+`intelligence/priority.py`
+
+Priority levels:
+
+```text
+urgent
+important
+interesting
+on_demand
+ignore
+```
+
+---
+
+# 34. DELIVERY POLICY
+
+Implemented:
+
+`intelligence/delivery.py`
+
+Current delivery concepts:
+
+```text
+urgent
+→ interrupt_candidate
+
+important
+→ next_opportunity
+
+interesting
+→ save_for_later
+
+on_demand
+→ available_when_asked
+
+ignore
+→ ignore
+```
+
+Delivery does not directly speak.
+
+The InteractionEngine remains responsible for SPEAK/WAIT.
+
+---
+
+# 35. INTELLIGENCE → INTERACTION
+
+Implemented:
+
+`intelligence/interaction_adapter.py`
+
+Flow:
+
+```text
+IntelligenceStory
         ↓
- ┌──────┼───────────┐
- │      │           │
-local   NVIDIA      other cloud
- │      │           │
-Gemma  NIM/DeepSeek ...
+PriorityDecision
+        ↓
+DeliveryPolicy
+        ↓
+Interaction Adapter
+        ↓
+InteractionEvent
+        ↓
+InteractionEngine
+        ↓
+SPEAK / WAIT
 ```
 
-Task-based routing.
+Tested behavior includes:
+
+```text
+important → WAIT when inappropriate
+
+on_demand → no proactive event
+
+urgent → SPEAK when allowed
+```
+
+---
+
+# 36. CURRENT AFFAIRS MODE
+
+Implemented:
+
+```text
+intelligence/current_affairs.py
+intelligence/current_affairs_formatter.py
+```
+
+Current sections:
+
+```text
+Local
+India
+Indian Tech
+AI & Technology
+Research & Science
+Business & Companies
+World
+```
+
+Current affairs is on-demand and separate from the morning briefing.
+
+---
+
+# 37. INTELLIGENCE QUEUE
+
+Implemented:
+
+`intelligence/queue.py`
+
+Stores:
+
+```text
+IMPORTANT
+INTERESTING
+```
+
+stories for later delivery consideration.
+
+Currently the queue is in-memory.
+
+Supports:
+
+* add
+* duplicate prevention
+* pending retrieval
+* removal
+* clear
+* priority ordering
+
+---
+
+# 38. DISCOVERY ENGINE
+
+Implemented:
+
+`intelligence/discovery.py`
+
+Current discovery logic considers:
+
+* priority
+* importance
+* novelty
+* personal relevance
+* confidence
+* learned feedback
+* story freshness
+* repetition suppression
+
+Discovery candidates are bounded to a maximum of 3.
+
+---
+
+# 39. DISCOVERY REPETITION SUPPRESSION
+
+A discovered story gets an in-memory identity.
+
+Preferred identity:
+
+```text
+story.url
+```
+
+Fallback:
+
+```text
+normalized story title
+```
+
+A story is not automatically marked as discovered merely because it is evaluated.
+
+The caller must explicitly call:
+
+```python
+mark_discovered(story)
+```
+
+The discovery history can be cleared in memory.
+
+---
+
+# 40. DISCOVERY FRESHNESS
+
+Implemented freshness weighting.
+
+Current half-life:
+
+```text
+24 hours
+```
+
+Approximate freshness factors:
+
+```text
+0 hours   → 1.0
+24 hours  → 0.5
+48 hours  → 0.25
+72 hours  → 0.125
+```
+
+Freshness contributes:
+
+```text
+0 .. +20
+```
+
+Future timestamps are treated as age zero.
+
+Stories without publication timestamps use neutral freshness behavior.
+
+---
+
+# 41. FEEDBACK SYSTEM
+
+Implemented:
+
+`intelligence/feedback.py`
+
+Feedback types:
+
+```text
+LIKE
+DISLIKE
+MORE_LIKE_THIS
+LESS_LIKE_THIS
+TELL_ME_MORE
+DO_NOT_TELL_ME_THIS
+DISMISS
+```
+
+Per-event adjustments:
+
+```text
+LIKE                 +5
+MORE_LIKE_THIS      +10
+TELL_ME_MORE         +8
+DISLIKE              -5
+LESS_LIKE_THIS      -10
+DO_NOT_TELL_ME_THIS -20
+DISMISS              -8
+```
+
+Preferences are bounded:
+
+```text
+-50 .. +50
+```
+
+Feedback is tracked independently for:
+
+* category
+* entity
+* source
+
+Entity/category/source matching is case-insensitive.
+
+---
+
+# 42. FEEDBACK PERSISTENCE
+
+Feedback is stored in SQLite.
+
+`FeedbackProfile` starts clean in memory.
+
+Persistent feedback is explicitly loaded with:
+
+```python
+load_persistent_feedback()
+```
+
+This design keeps normal unit tests isolated from persistent state.
+
+---
+
+# 43. FEEDBACK DECAY
+
+Implemented time decay.
+
+Current half-life:
+
+```text
+30 days
+```
+
+Approximate strength:
+
+```text
+0 days   → 1.0
+30 days  → 0.5
+60 days  → 0.25
+90 days  → 0.125
+```
+
+Historical feedback is never deleted because of decay.
+
+Only its current influence decreases.
+
+New feedback receives full current strength.
+
+---
+
+# 44. FEEDBACK → INTELLIGENCE SCORING
+
+Feedback is integrated into `IntelligenceScorer`.
+
+Flow:
+
+```text
+base intelligence score
+        ↓
+feedback category adjustment
+        ↓
+feedback entity adjustment
+        ↓
+feedback source adjustment
+        ↓
+personalized score
+```
+
+The feedback contribution is bounded.
+
+---
+
+# 45. FEEDBACK HANDLER
+
+Implemented:
+
+`intelligence/feedback_handler.py`
+
+It accepts an `IntelligenceStory` and extracts:
+
+* story category
+* entity names
+* source
+
+then records the appropriate `FeedbackType`.
+
+---
+
+# 46. FEEDBACK → DISCOVERY
+
+Discovery now uses learned preferences.
+
+Feedback contribution is bounded:
+
+```text
+-30 .. +30
+```
+
+Entity contribution is separately bounded:
+
+```text
+-20 .. +20
+```
+
+Positive learned preferences can increase discovery scores.
+
+Negative learned preferences can suppress discovery.
+
+Strong negative preferences can cause an otherwise moderate story to fall below the discovery threshold.
+
+---
+
+# 47. HUMOR SYSTEM
+
+Implemented:
+
+```text
+intelligence/humor.py
+intelligence/test_humor.py
+```
+
+Current humor system is:
+
+* deterministic
+* offline
+* dependency-free
+* template-based
+* context-aware
+* non-repeating within an engine instance
+
+Supported styles include:
+
+```text
+light
+playful
+tech
+observational
+self_aware
+```
+
+The system detects topics such as:
+
+* coding
+* debugging
+* compiling
+* studying
+* late night
+* weather
+* VYRA/self
+* Python/C++/DSA
+
+It does not call an LLM yet.
+
+---
+
+# 48. FUN-FACT SYSTEM
+
+Implemented:
+
+```text
+intelligence/fun_facts.py
+intelligence/test_fun_facts.py
+```
+
+Supported categories include:
+
+```text
+science
+technology
+history
+space
+nature
+india
+random
+```
+
+Features:
+
+* confidence-based selection
+* category filtering
+* duplicate protection
+* invalid-category protection
+
+Currently local/in-memory.
+
+Internet-backed fact retrieval is future work.
+
+---
+
+# 49. DISCOVERY POLICY
+
+Implemented:
+
+`intelligence/discovery_policy.py`
+
+Current general discovery cooldown:
+
+```text
+180 minutes
+```
+
+Current fun-fact cooldown:
+
+```text
+360 minutes
+```
+
+Discovery policy is intentionally separate from the main InteractionEngine.
+
+---
+
+# 50. CURRENT INTELLIGENCE ARCHITECTURE
+
+Current pipeline:
+
+```text
+Real intelligence source
+        ↓
+IntelligenceStory
+        ↓
+Deduplication
+        ↓
+Entity extraction
+        ↓
+Topic relevance
+        ↓
+Geographic relevance
+        ↓
+India relevance
+        ↓
+Technology/research relevance
+        ↓
+World relevance
+        ↓
+Intelligence scoring
+        ↓
+Feedback personalization
+        ↓
+Priority
+        ↓
+Delivery policy
+        ↓
+InteractionEngine
+        ↓
+SPEAK / WAIT
+```
+
+Discovery branch:
+
+```text
+IMPORTANT / INTERESTING
+        ↓
+IntelligenceQueue
+        ↓
+DiscoveryEngine
+        ↓
+feedback
++
+freshness
++
+repetition suppression
+        ↓
+DiscoveryCandidate
+        ↓
+DiscoveryPolicy
+        ↓
+InteractionEngine
+```
+
+---
+
+# 51. USER PERSONALIZATION
+
+VYRA now has the first real personalization loop:
+
+```text
+story
+↓
+user feedback
+↓
+feedback profile
+↓
+SQLite
+↓
+time-decayed preference
+↓
+future scoring
+↓
+future discovery
+```
+
+This is the foundation for longer-term adaptation.
+
+---
+
+# 52. DEVELOPMENT TOOL TEAM
+
+The VYRA development workflow intentionally uses multiple AI tools.
+
+Potential collaborators:
+
+```text
+ChatGPT
+DeepSeek
+Cursor
+Claude / Claude Code
+Codex
+Blackbox AI
+other coding/reasoning tools
+```
+
+Preferred workflow:
+
+```text
+architecture/task
+→ one coding tool
+→ tests
+→ review
+→ integration
+→ Git checkpoint
+```
+
+Do not have multiple coding agents edit the same file simultaneously.
+
+Use the tool best suited to the task rather than forcing every task through every platform.
+
+---
+
+# 53. TESTING RULE
+
+When running Python package modules, prefer:
+
+```text
+python -m package.module
+```
 
 Examples:
 
 ```text
-simple/private → local
-complex reasoning → stronger model
-coding → coding-capable model
-multimodal → multimodal model
-high privacy → local
+python -m intelligence.test_discovery
+python -m intelligence.test_feedback
+python -m intelligence.test_fun_facts
+python -m intelligence.test_humor
+python -m intelligence.test_queue
 ```
 
-NVIDIA's current API/NIM ecosystem may be considered as one provider.
+For syntax verification:
 
-Do NOT assume any particular free token quota permanently.
+```text
+python -m py_compile <files>
+```
+
+Do not change tests merely to hide an implementation bug.
 
 ---
 
-# 38. DEEPSEEK / CURSOR / CLAUDE / OTHER DEVELOPMENT TOOLS
+# 54. GIT CHECKPOINT RULE
 
-These are development tools and optional providers, not necessarily runtime components.
+Git checkpoints should occur after a meaningful stable batch, not every tiny edit.
 
-Use them strategically.
-
-Recommended workflow:
+Preferred cycle:
 
 ```text
-ChatGPT
-→ architecture / roadmap / integration
+implement
+↓
+test
+↓
+integrate
+↓
+verify
+↓
+replace VYRA_STATE.md
+↓
+git checkpoint
+```
 
-Cursor
-→ codebase navigation / refactoring
+Temporary debugging scripts should not be committed unless intentionally converted into reusable project tests.
 
+---
+
+# 55. CURRENT COMPLETION STATUS
+
+Major completed areas include:
+
+```text
+Core VYRA
+Ollama/Gemma
+SQLite memory
+Tasks/reminders
+Scheduler
+Activity monitoring
+Context system
+Interaction policy
+Interaction engine
+Proactive system
+Daily session state
+Morning briefing foundation
+Weather
+Memory retrieval
+Calendar abstraction
+Windows location
+Reverse geocoding
+LocationService
+Current location context
+Important places
+Place relationships
+IntelligenceStory
+Entity extraction
+Entity-aware scoring
+RSS/Atom source adapter
+Source configuration
+Source registry
+Source factory
+Source ingestion
+Deduplication
+Topic relevance
+Geographic relevance
+India relevance
+Technology/research relevance
+World relevance
+Priority engine
+Delivery policy
+Intelligence → InteractionEngine
+Current affairs mode
+Intelligence queue
+Discovery engine
+Discovery feedback personalization
+Discovery repetition suppression
+Discovery freshness
+Fun-fact system
+Humor system
+Persistent feedback
+Feedback decay
+Feedback-aware intelligence scoring
+Feedback-aware discovery
+```
+
+---
+
+# 56. CURRENT STEP
+
+**7.76 — Discovery / feedback integration refinement**
+
+The next goal is to improve how VYRA combines learned preferences, freshness, discovery timing, and the InteractionEngine before moving deeper into autonomous/proactive personalization.
+
+---
+
+# 57. IMMEDIATE NEXT STEPS
+
+```text
+7.76  Discovery / feedback integration refinement
+
+7.77  Discovery timing with InteractionEngine
+
+7.78  Persistent discovery history
+
+7.79  Personalized discovery frequency
+
+7.80  User-controlled information preferences
+
+7.81  Better story/entity preference explanations
+
+7.82  Feedback-aware current-affairs selection
+
+7.83  Feedback-aware morning intelligence
+
+7.84  Surprise/fun-fact selection
+
+7.85  Natural humor integration
+
+7.86  Reddit/community intelligence
+
+7.87  Research/deep-tech discovery
+
+7.88  Company/India-market intelligence
+
+7.89  Persistent intelligence history
+
+7.90  Longitudinal intelligence trends
+
+8.0   Semantic memory retrieval
+
+8.1   Embeddings
+
+8.2   Memory deduplication
+
+8.3   Memory importance
+
+8.4   Memory decay / supersession
+
+8.5   Context-aware memory selection
+
+9.0   Model router
+
+9.1   Local model provider
+
+9.2   NVIDIA/NIM provider
+
+9.3   DeepSeek provider
+
+9.4   Additional cloud providers
+
+9.5   Specialist model routing
+
+9.6   Automatic fallback
+
+10.0  Voice
+
+11.0  Vision
+
+12.0  Computer interaction
+
+13.0  Personalization
+
+14.0  Personality / presence
+
+15.0  Advanced intelligence
+
+16.0  PyTorch/custom ML
+
+17.0  Dockerized services
+
+18.0  Controlled self-improvement
+
+19.0  Long-term VYRA evolution
+```
+
+---
+
+# 58. LONG-TERM MODEL / TOOL ROADMAP
+
+Future model providers may include:
+
+```text
+Ollama/local models
+NVIDIA NIM
 DeepSeek
-→ alternate implementation / coding / review
-
-Other models
-→ second opinions / research
-
-Git
-→ checkpoint after major stable milestone
+cloud providers
+specialist models
+vision models
+speech models
+embedding models
 ```
 
-The user should increasingly be given scoped tasks to build independently.
+Future tool orchestration may allow VYRA herself to call appropriate providers/tools based on:
+
+* privacy
+* task complexity
+* latency
+* cost
+* reliability
+* capability
+
+VYRA should not become dependent on any single external provider.
 
 ---
 
-# 39. PYTORCH ROADMAP
+# 59. LONG-TERM ML ROADMAP
 
-Do not add PyTorch merely for the technology list.
+PyTorch should be introduced when VYRA has a concrete learned-model requirement.
 
-Potential real future uses:
+Possible applications:
 
-* activity classifier
-* personalized relevance model
-* memory ranking
-* semantic classifiers
-* recommendation model
-* computer-vision models
-* custom embeddings
+* activity classification
+* personalized ranking
+* recommendation
+* learned relevance
+* semantic intelligence
+* vision
 
-Current system uses deterministic heuristics.
-
----
-
-# 40. TENSORFLOW ROADMAP
-
-TensorFlow is optional.
-
-Use it only if a selected pretrained system/tool requires it or if it becomes the best fit for an actual VYRA ML subsystem.
-
-Do not maintain both PyTorch and TensorFlow without a reason.
+TensorFlow is optional and should only be introduced for a concrete technical reason.
 
 ---
 
-# 41. DOCKER ROADMAP
+# 60. LONG-TERM DOCKER ROADMAP
 
-Docker becomes important when VYRA has isolated services such as:
+Docker may eventually isolate:
+
+* model services
+* embedding service
+* research service
+* vector database
+* voice service
+* vision service
+* agent sandbox
+* self-improvement sandbox
+
+Docker should be introduced when these become actual service boundaries.
+
+---
+
+# 61. LONG-TERM SELF-IMPROVEMENT
+
+Desired architecture:
 
 ```text
-model server
-embedding service
-vector DB
-research service
-speech
-vision
-agent sandbox
-self-improvement sandbox
-```
-
-Especially important for future self-improvement:
-
-```text
-VYRA proposes change
- ↓
-Docker sandbox
- ↓
-tests
- ↓
+observe
+↓
+identify improvement
+↓
+propose change
+↓
+generate candidate
+↓
+sandbox
+↓
+test
+↓
 benchmark
- ↓
-security checks
- ↓
-candidate version
- ↓
-controlled deployment
- ↓
-rollback if needed
+↓
+review
+↓
+version
+↓
+deploy
+↓
+observe
 ```
 
-VYRA must NOT silently rewrite production code without controls.
+VYRA should not silently rewrite production code without controlled evaluation and rollback.
 
 ---
 
-# 42. LONG-TERM SELF-IMPROVEMENT VISION
+# 62. LONG-TERM VYRA
 
-Desired future loop:
+VYRA should eventually be able to:
 
 ```text
-Observe
- ↓
-Evaluate
- ↓
-Learn preferences
- ↓
-Identify improvement opportunity
- ↓
-Create candidate
- ↓
-Sandbox
- ↓
-Test
- ↓
-Benchmark
- ↓
-Review
- ↓
-Version
- ↓
-Deploy safely
- ↓
-Observe outcome
-```
-
-Potentially useful technologies:
-
-* Docker
-* Git
-* tests
-* model benchmarking
-* PyTorch
-* embeddings
-* code-analysis tools
-* multiple LLM providers
-
----
-
-# 43. ADVANCED MEMORY ROADMAP
-
-Current:
-
-```text keyword retrieval
-```
-
-Future:
-
-```text SQLite
- ↓
-embeddings
- ↓
-semantic retrieval
- ↓
-importance
- ↓
-recency
- ↓
-supersession
- ↓
-deduplication
- ↓
-context relevance
-```
-
-VYRA should distinguish:
-
-```text
-long-term memory
-task/reminder state
-briefing history
-location/important-place state
-conversation history
-```
-
-These should not all become one giant memory table.
-
----
-
-# 44. VOICE ROADMAP
-
-Future:
-
-* speech-to-text
-* text-to-speech
-* wake word
-* interruption/barge-in
-* natural pacing
-* voice personality
-* voice privacy
-
----
-
-# 45. VISION ROADMAP
-
-Future:
-
-* camera support
-* screen understanding
-* active window/app detection
-* visual context
-* OCR where actually necessary
-* visual safety/permission controls
-
-Do not continuously store images unless explicitly needed.
-
----
-
-# 46. COMPUTER INTERACTION ROADMAP
-
-Future capabilities:
-
-* file operations
-* browser interactions
-* IDE assistance
-* application automation
-* controlled computer use
-
-Potential safety model:
-
-```text harmless action
-→ automatic
-
-potentially destructive action
-→ confirmation
-
-sensitive action
-→ explicit confirmation
-```
-
----
-
-# 47. PERSONALITY EVOLUTION
-
-VYRA should eventually maintain:
-
-```text baseline personality
-+
-current conversational mode
-+
-contextual behavioral state
-+
-learned user preferences
-```
-
-Possible modes:
-
-```text companion
-researcher
-coding partner
-coach
-comedian
-curious friend
-guardian
-```
-
-These should be contextual, not separate disconnected personalities.
-
----
-
-# 48. IMPORTANT PRODUCT PRINCIPLE
-
-VYRA should be capable of knowing a lot without feeling obligated to tell the user everything.
-
-Desired behavior:
-
-```text huge information availability
-        ↓
-relevance
-        ↓
-judgment
-        ↓
-attention-aware communication
-```
-
-Most discovered information should be:
-
-```text IGNORE
-```
-
-unless the user asks or it becomes important.
-
----
-
-# 49. GIT CHECKPOINTS
-
-Git should be used regularly.
-
-At every major stable milestone:
-
-```text
-run tests
-→ git status
-→ inspect diff
-→ commit
-```
-
-Do not commit:
-
-* `.venv`
-* secrets
-* API keys
-* raw personal GPS history
-* temporary test files
-* runtime artifacts
-
-unless intentionally required.
-
----
-
-# 50. CURRENT PROJECT STATUS
-
-## Completed / working
-
-* core VYRA
-* Ollama/Gemma
-* SQLite memory
-* tasks
-* reminders
-* scheduler
-* activity monitor
-* context manager
-* ACTIVE
-* INPUT_ACTIVE
-* BUSY
-* IDLE
-* AWAY
-* RETURNED
-* interaction policy
-* interaction engine
-* proactive event generator
-* proactive loop
-* proactive cooldown
-* quiet mode
-* proactive daily limits
-* duplicate proactive event suppression
-* daily session state
-* morning briefing
-* weather
-* morning facts
-* briefing relevance
-* briefing novelty foundation
-* persistent briefing history
-* selective memory retrieval
-* calendar abstraction
-* live Windows location
-* reverse geocoding
-* LocationService
-* current location context
-* persistent Home location
-* ImportantPlace model
-* location privacy boundary foundation
-* IntelligenceStory model
-* source trust
-* intelligence scoring
-* intelligence ingestion
-* intelligence deduplication
-
----
-
-# 51. CURRENTLY IN PROGRESS
-
-## Step 7.45
-
-Entity & Topic Intelligence.
-
-Next target:
-
-```text
-intelligence/entities.py
-```
-
-Create:
-
-```text
-StoryEntity
-EntityExtractor
-```
-
-Rule-based first version.
-
----
-
-# 52. IMMEDIATE NEXT STEPS
-
-## Intelligence System
-
-7.54 — Location-aware and topic-aware intelligence selection
-
-7.55 — Local / Punjab / Jalandhar / current-location relevance weighting
-
-7.56 — Home / family / friend / important-place intelligence
-
-7.57 — India-wide important-event weighting
-
-7.58 — Indian technology / AI / research / deep-tech relevance
-
-7.59 — World-news importance filtering
-
-7.60 — Current-affairs mode
-
-7.61 — Company / acquisition / investment / India-market intelligence
-
-7.62 — Research and deep-tech discovery
-
-7.63 — Community / Reddit discovery
-
-7.64 — Story freshness and advanced novelty
-
-7.65 — Persistent user feedback on intelligence
-
-7.66 — Personalized intelligence preferences
-
-## Proactive Intelligence
-
-7.67 — Important-story delivery queue
-
-7.68 — Urgent-event notification rules
-
-7.69 — Next-opportunity delivery
-
-7.70 — Surprise / discovery engine
-
-7.71 — Fun-fact engine
-
-7.72 — Natural humor / joke system
-
-## Morning Intelligence
-
-7.73 — Morning intelligence fusion
-
-7.74 — Morning briefing topic selection
-
-7.75 — Morning novelty across multiple days
-
-7.76 — Morning briefing feedback
-
-7.77 — Personalized morning style
-
-## Memory
-
-8.0 — Semantic memory retrieval
-
-8.1 — Embeddings
-
-8.2 — Memory deduplication
-
-8.3 — Memory importance
-
-8.4 — Memory decay / supersession
-
-8.5 — Context-aware memory selection
-
-## Model System
-
-9.0 — Model router
-
-9.1 — Local model provider
-
-9.2 — NVIDIA/NIM provider
-
-9.3 — DeepSeek provider
-
-9.4 — Additional cloud providers
-
-9.5 — Specialist model routing
-
-9.6 — Automatic fallback
-
-9.7 — Model performance tracking
-
-## Voice
-
-10.0 — Speech-to-text
-
-10.1 — Text-to-speech
-
-10.2 — Wake word
-
-10.3 — Interrupt / barge-in
-
-10.4 — Voice personality
-
-## Vision
-
-11.0 — Screen understanding
-
-11.1 — Camera support
-
-11.2 — Visual context
-
-11.3 — Application awareness
-
-## Computer Interaction
-
-12.0 — File interaction
-
-12.1 — Browser interaction
-
-12.2 — Application automation
-
-12.3 — Controlled computer use
-
-## Personalization
-
-13.0 — Behavioral preference learning
-
-13.1 — Communication-style learning
-
-13.2 — Humor preference learning
-
-13.3 — Information preference learning
-
-13.4 — Interruption preference learning
-
-## Personality / Presence
-
-14.0 — Personality state
-
-14.1 — Contextual behavior modes
-
-14.2 — Companion behavior
-
-14.3 — Researcher behavior
-
-14.4 — Coding-partner behavior
-
-14.5 — Coach behavior
-
-14.6 — Humor / playful behavior
-
-14.7 — Surprise behavior
-
-## Advanced Intelligence
-
-15.0 — Entity-aware semantic intelligence
-
-15.1 — Embedding-based story similarity
-
-15.2 — Advanced event clustering
-
-15.3 — Trend detection
-
-15.4 — Longitudinal intelligence
-
-15.5 — Personal relevance model
-
-15.6 — Learned ranking
-
-## ML
-
-16.0 — PyTorch evaluation
-
-16.1 — Custom relevance model
-
-16.2 — Activity classification
-
-16.3 — Personalized ranking model
-
-16.4 — Recommendation model
-
-16.5 — Evaluate TensorFlow only when a real dependency requires it
-
-## Infrastructure
-
-17.0 — Dockerized services
-
-17.1 — Model service isolation
-
-17.2 — Embedding/vector service
-
-17.3 — Research service
-
-17.4 — Voice service
-
-17.5 — Vision service
-
-17.6 — Self-improvement sandbox
-
-## Self-Improvement
-
-18.0 — Improvement proposal system
-
-18.1 — Candidate code generation
-
-18.2 — Automated testing
-
-18.3 — Benchmarking
-
-18.4 — Sandboxed evaluation
-
-18.5 — Versioning
-
-18.6 — Rollback
-
-18.7 — Controlled deployment
-
-## Long-Term VYRA
-
-19.0 — Persistent relationship continuity
-
-19.1 — Long-term personality adaptation
-
-19.2 — Autonomous knowledge discovery
-
-19.3 — Personal intelligence history
-
-19.4 — Multi-model orchestration
-
-19.5 — Long-term learning
-
----
-
-# 53. LATER MAJOR PHASES
-
-```text
-8.x   Model Router
-9.x   Advanced Memory / Embeddings
-10.x  Voice
-11.x  Vision
-12.x  Computer Interaction
-13.x  Browser/Research Agent
-14.x  Communications / Calendar providers
-15.x  Personality State
-16.x  Surprise / Discovery Engine
-17.x  ML personalization
-18.x  NVIDIA / DeepSeek / Cloud providers
-19.x  PyTorch-based custom intelligence
-20.x  Dockerized services
-21.x  Self-improvement sandbox
-22.x  VYRA UI / avatar / presence
-23.x  Long-term autonomous learning
-```
-
----
-
-# 54. NEXT DEVELOPER ASSIGNMENT
-
-For the current step, use Cursor/DeepSeek to create:
-
-```text
-E:\VYRA\intelligence\entities.py
-```
-
-Requirements:
-
-1. Create `StoryEntity` dataclass:
-
-   * name
-   * entity_type
-   * confidence
-   * relevance
-
-2. Define entity types:
-
-   * PERSON
-   * COMPANY
-   * ORGANIZATION
-   * LOCATION
-   * TECHNOLOGY
-   * RESEARCH_TOPIC
-   * PRODUCT
-   * EVENT
-   * OTHER
-
-3. Create:
-
-```python
-EntityExtractor
-```
-
-with:
-
-```python
-extract(title: str, summary: str) -> list[StoryEntity]
-```
-
-4. First version must be deterministic/rule-based.
-
-5. No LLM dependency yet.
-
-6. No external dependency unless absolutely required.
-
-7. Recognize obvious terms such as:
-
-```text
-AI
-machine learning
-deep learning
-LLM
-semiconductor
-chip
-quantum
-DNA data storage
-robotics
-biotech
-cybersecurity
-cloud computing
-```
-
-8. Recognize obvious places such as:
-
-```text
-India
-Punjab
-Delhi
-Jalandhar
-Bengaluru
-Mumbai
-United States
-China
-Europe
-```
-
-9. Keep the module small and readable.
-
-10. Do not modify unrelated VYRA files.
-
-11. Include simple tests for extraction.
-
-After implementing it with Cursor/DeepSeek:
-
-* bring the resulting `entities.py` here
-* explain what the tool generated
-* review it before integrating it
-* then update this state document
-
----
-
-# 55. IMPORTANT DEVELOPMENT RULE
-
-Whenever a future AI is asked to modify VYRA:
-
-1. Read this file first.
-2. Inspect the actual source code.
-3. Do not assume a previously described method still exists.
-4. Do not replace whole modules unless necessary.
-5. Do not modify unrelated modules.
-6. Run the requested tests.
-7. Report exact files changed.
-8. Update `VYRA_STATE.md` after a stable milestone.
-9. Create a Git checkpoint after significant stable milestones.
-
----
-
-# 56. CURRENT SOURCE-OF-TRUTH RULE
-
-Priority of truth:
-
-```text
-1. Actual source code
-2. Actual database schema/data
-3. Actual tests/runtime behavior
-4. This VYRA_STATE.md
-5. Conversation descriptions
-```
-
-If this file says a method exists but the source code does not, trust the source code and update this file.
-
----
-
-# 57. VYRA'S END GOAL
-
-The finished VYRA should feel like:
-
-```text
-personal memory
-+
-context awareness
-+
-location awareness
-+
-current intelligence
-+
-reasoning
-+
-tools
-+
-personality
-+
-humor
-+
-research ability
-+
-initiative
-+
-continuity
-+
-controlled learning
-```
-
-She should know when to:
-
-```text
-speak
-wait
-research
 remember
-forget
-interrupt
-surprise
-ask
-act
+reason
+research
+observe context
+understand location
+understand important places
+learn preferences
+discover useful information
+choose when to speak
+choose when to wait
+use multiple AI models
+use tools/APIs
+provide humor
+provide useful surprises
+adapt over time
+maintain continuity
 ```
 
-The ultimate goal is not maximum automation.
+The goal is not maximum information output.
 
-The goal is **good judgment combined with continuity and personality**.
+The goal is:
+
+**good judgment + continuity + personality + usefulness.**
 
 ---
 
-# 58. LAST UPDATED
+# 63. LAST UPDATED
 
-CURRENT STEP
+Completed through:
 
-7.54 — Location/topic-aware intelligence selection
+**7.75 — Discovery Freshness**
 
-COMPLETED
+Next:
 
-7.45 — Entity & Topic Intelligence
-7.46 — Entity-aware intelligence scoring
-7.47 — RSS/Atom intelligence source adapter
-7.48 — Source configuration/registry
-7.49 — Source category configuration
-7.50 — Verified real intelligence sources
-7.51 — Intelligence priority engine
-7.52 — Intelligence delivery policy
-7.53 — Intelligence → InteractionEngine adapter
-
-CURRENT ARCHITECTURE
-
-Real intelligence source
-→ IntelligenceStory
-→ deduplication
-→ entity extraction
-→ entity-aware scoring
-→ priority
-→ delivery policy
-→ InteractionEngine
-→ SPEAK / WAIT
+**7.76 — Discovery / feedback integration refinement**

@@ -1,3 +1,24 @@
+from intelligence.discovery import DiscoveryEngine
+
+from intelligence.geography import (
+    GeographicRelevanceEngine,
+)
+
+from intelligence.tech_relevance import (
+    TechnologyRelevanceEngine,
+)
+
+from intelligence.india_relevance import (
+    IndiaRelevanceEngine,
+)
+
+from intelligence.world_relevance import (
+    WorldRelevanceEngine,
+)
+
+from intelligence.queue import IntelligenceQueue
+
+from intelligence.selection import IntelligenceSelector
 
 from intelligence.delivery import (
     IntelligenceDeliveryPolicy,
@@ -5,6 +26,7 @@ from intelligence.delivery import (
 )
 
 from intelligence.priority import (
+    IntelligencePriority,
     IntelligencePriorityEngine,
     PriorityDecision,
 )
@@ -18,6 +40,13 @@ from intelligence.ingestion import (
     IntelligenceIngestionEngine,
 )
 from intelligence.models import IntelligenceStory
+
+from intelligence.feedback import FeedbackProfile
+
+from intelligence.feedback_handler import (
+    IntelligenceFeedbackHandler,
+)
+
 from intelligence.scoring import (
     IntelligenceScorer,
     StoryScore,
@@ -33,12 +62,28 @@ class IntelligenceEngine:
         ingestion: IntelligenceIngestionEngine,
         scorer: IntelligenceScorer | None = None,
         deduplicator: StoryDeduplicator | None = None,
+        feedback_profile: FeedbackProfile | None = None,
     ) -> None:
         self.ingestion = ingestion
 
+        self.feedback_profile = (
+            feedback_profile
+            or FeedbackProfile()
+        )
+
+        self.feedback_profile.load_persistent_feedback()
+
+        self.feedback_handler = (
+            IntelligenceFeedbackHandler(
+                self.feedback_profile
+            )
+        )
+
         self.scorer = (
             scorer
-            or IntelligenceScorer()
+            or IntelligenceScorer(
+                self.feedback_profile
+            )
         )
 
         self.deduplicator = (
@@ -51,6 +96,29 @@ class IntelligenceEngine:
         self.priority_engine = IntelligencePriorityEngine()
 
         self.delivery_policy = IntelligenceDeliveryPolicy()
+
+        self.selector = IntelligenceSelector()
+
+        self.geographic_engine = (
+            GeographicRelevanceEngine()
+        )
+
+        self.india_relevance = (
+            IndiaRelevanceEngine()
+        )
+
+
+        self.technology_relevance = (
+            TechnologyRelevanceEngine()
+        )
+
+        self.world_relevance = (
+            WorldRelevanceEngine()
+        )
+
+        self.queue = IntelligenceQueue()
+
+        self.discovery = DiscoveryEngine()
 
     def evaluate(
         self,
@@ -83,7 +151,12 @@ class IntelligenceEngine:
         )
 
         evaluated: list[
-            tuple[IntelligenceStory, StoryScore]
+            tuple[
+                IntelligenceStory,
+                StoryScore,
+                PriorityDecision,
+                IntelligenceDeliveryDecision,
+            ]
         ] = []
 
         for item in merged:
@@ -92,6 +165,48 @@ class IntelligenceEngine:
                     item.story.title,
                     item.story.summary,
                 )
+            )
+
+            selection = self.selector.evaluate(
+                item.story
+            )
+
+            geographic = (
+    self.geographic_engine.evaluate(
+        story=item.story,
+        current_location=current_location,
+        important_places=important_places,
+    )
+)
+
+            india = self.india_relevance.evaluate(
+                item.story
+            )
+
+            technology = (
+                self.technology_relevance.evaluate(
+                    item.story
+                )
+            )
+
+            world = (
+                self.world_relevance.evaluate(
+                    item.story
+                )
+            )
+
+            total_relevance_bonus = (
+                selection.bonus
+                + geographic.bonus
+                + india.bonus
+                + technology.bonus
+                + world.bonus
+            )
+
+            item.story.personal_relevance = min(
+                100,
+                item.story.personal_relevance
+                + total_relevance_bonus,
             )
 
             result = self.scorer.score(
@@ -108,6 +223,15 @@ class IntelligenceEngine:
                 decision
             )
 
+            if decision.priority in {
+                IntelligencePriority.IMPORTANT,
+                IntelligencePriority.INTERESTING,
+            }:
+                self.queue.add(
+                    item.story,
+                    decision.priority,
+                )
+
             evaluated.append(
                 (
                     item.story,
@@ -123,3 +247,33 @@ class IntelligenceEngine:
         )
 
         return evaluated
+
+    def get_discovery_candidates(
+        self,
+        limit: int = 3,
+    ):
+        """Return queued stories worth considering as discoveries."""
+
+        pending = self.queue.get_pending(
+            limit=10
+        )
+
+        candidates = self.discovery.evaluate(
+            pending
+        )   
+
+        return candidates[:limit]
+    
+    def record_feedback(
+        self,
+        story: IntelligenceStory,
+        feedback_type: str,
+    ) -> None:
+        """Record user feedback about an intelligence story."""
+
+        self.feedback_handler.record_story_feedback(
+            story=story,
+            feedback_type=feedback_type,
+        )
+
+    
