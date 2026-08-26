@@ -83,6 +83,16 @@ def initialize_database() -> None:
             """
         )
 
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS intelligence_discovery_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                story_identity TEXT NOT NULL UNIQUE,
+                discovered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        )
+
         connection.commit()
 
     migrate_tasks_table()
@@ -572,6 +582,62 @@ def clear_intelligence_feedback() -> None:
     ) as connection:
         connection.execute(
             "DELETE FROM intelligence_feedback"
+        )
+
+        connection.commit()
+
+def save_intelligence_discovery(
+    story_identity: str,
+) -> None:
+    """Persist that an intelligence discovery was delivered."""
+
+    with sqlite3.connect(
+        DATABASE_PATH
+    ) as connection:
+        connection.execute(
+            """
+            INSERT OR IGNORE INTO intelligence_discovery_history (
+                story_identity
+            )
+            VALUES (?)
+            """,
+            (story_identity,),
+        )
+
+        connection.commit()
+
+
+def get_intelligence_discovery_history() -> list[str]:
+    """Return all persisted discovery identities."""
+
+    with sqlite3.connect(
+        DATABASE_PATH
+    ) as connection:
+        cursor = connection.execute(
+            """
+            SELECT story_identity
+            FROM intelligence_discovery_history
+            ORDER BY id ASC
+            """
+        )
+
+        return [
+            row[0]
+            for row in cursor.fetchall()
+        ]
+
+
+def clear_intelligence_discovery_history() -> None:
+    """Clear persisted discovery history.
+
+    Intended for development/testing cleanup.
+    """
+
+    with sqlite3.connect(
+        DATABASE_PATH
+    ) as connection:
+        connection.execute(
+            "DELETE FROM intelligence_discovery_history"
         )
 
         connection.commit()

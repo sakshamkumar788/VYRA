@@ -1,4 +1,17 @@
-from intelligence.discovery import DiscoveryEngine
+from datetime import datetime
+
+from intelligence.discovery import (
+    DiscoveryCandidate,
+    DiscoveryEngine,
+)
+from intelligence.interaction_adapter import (
+    IntelligenceInteractionAdapter,
+)
+from interaction.engine import InteractionEngine
+from interaction.policy import (
+    InteractionContext,
+    InteractionDecision,
+)
 
 from intelligence.geography import (
     GeographicRelevanceEngine,
@@ -41,6 +54,10 @@ from intelligence.ingestion import (
 )
 from intelligence.models import IntelligenceStory
 
+from intelligence.user_preferences import (
+    UserPreferenceManager,
+)
+
 from intelligence.feedback import FeedbackProfile
 
 from intelligence.feedback_handler import (
@@ -75,6 +92,12 @@ class IntelligenceEngine:
 
         self.feedback_handler = (
             IntelligenceFeedbackHandler(
+                self.feedback_profile
+            )
+        )
+
+        self.user_preferences = (
+            UserPreferenceManager(
                 self.feedback_profile
             )
         )
@@ -118,7 +141,13 @@ class IntelligenceEngine:
 
         self.queue = IntelligenceQueue()
 
-        self.discovery = DiscoveryEngine()
+        self.discovery = DiscoveryEngine(
+            self.feedback_profile
+        )
+
+        self.interaction_adapter = (
+            IntelligenceInteractionAdapter()
+        )
 
     def evaluate(
         self,
@@ -263,7 +292,49 @@ class IntelligenceEngine:
         )   
 
         return candidates[:limit]
-    
+
+    def evaluate_discovery(
+        self,
+        candidate: DiscoveryCandidate,
+        interaction_engine: InteractionEngine,
+        context: InteractionContext,
+    ) -> InteractionDecision:
+        """
+        Convert a discovery candidate into an InteractionEvent
+        and ask the existing InteractionEngine whether to speak.
+
+        This does not mark the story discovered.
+        """
+
+        return self.interaction_adapter.evaluate_discovery(
+            candidate,
+            interaction_engine,
+            context,
+        )
+
+    def deliver_discovery(
+        self,
+        candidate: DiscoveryCandidate,
+        interaction_engine: InteractionEngine,
+        current_time: datetime | None = None,
+    ) -> None:
+        """
+        Record an actually delivered discovery.
+
+        Uses InteractionEngine.record_proactive_interaction()
+        and then marks the story discovered.
+        """
+
+        if current_time is None:
+            current_time = datetime.now()
+
+        self.interaction_adapter.deliver_discovery(
+            candidate,
+            interaction_engine,
+            self.discovery,
+            current_time,
+        )
+
     def record_feedback(
         self,
         story: IntelligenceStory,
@@ -275,5 +346,35 @@ class IntelligenceEngine:
             story=story,
             feedback_type=feedback_type,
         )
+
+    
+    def apply_user_preference(
+        self,
+        text: str,
+    ) -> bool:
+        """
+        Parse and apply an explicit user information preference.
+
+        Returns True when the text is recognized as a preference.
+        """
+
+        from intelligence.user_preferences import (
+            UserPreferenceParser,
+        )
+
+        parser = UserPreferenceParser()
+
+        command = parser.parse(
+            text
+        )
+
+        if command is None:
+            return False
+
+        self.user_preferences.apply(
+            command
+        )
+
+        return True
 
     

@@ -1,11 +1,24 @@
 from datetime import datetime, timedelta
+import inspect
 
+from context.context import SessionState
 from intelligence.discovery import DiscoveryEngine
 from intelligence.entities import StoryEntity
 from intelligence.feedback import FeedbackProfile, FeedbackType
+from intelligence.interaction_adapter import IntelligenceInteractionAdapter
 from intelligence.models import IntelligenceStory
 from intelligence.priority import IntelligencePriority
 from intelligence.queue import QueuedIntelligence
+from interaction.engine import InteractionEngine
+from interaction.policy import (
+    InteractionContext,
+    InteractionDecision,
+    InteractionPriority,
+)
+from memory.database import (
+    clear_intelligence_discovery_history,
+    get_intelligence_discovery_history,
+)
 
 
 def _queued(
@@ -52,6 +65,7 @@ def _score(engine: DiscoveryEngine, story: IntelligenceStory) -> int:
 
 
 def main() -> None:
+    clear_intelligence_discovery_history()
     engine = DiscoveryEngine()
 
     strong_story = IntelligenceStory(
@@ -755,6 +769,224 @@ def main() -> None:
     )
     assert len(candidates_missing) == 1
     assert candidates_missing[0].score == score_0h - 10
+
+    # ---------------------------------------------------------
+    # Discovery timing with InteractionEngine
+    # ---------------------------------------------------------
+
+    adapter = IntelligenceInteractionAdapter()
+    discovery = DiscoveryEngine()
+
+    interesting_items = [
+        _queued(
+            _strong_story(title="DNA data storage breakthrough"),
+            IntelligencePriority.INTERESTING,
+        )
+    ]
+    interesting_candidates = discovery.evaluate(interesting_items)
+    assert len(interesting_candidates) == 1
+    interesting = interesting_candidates[0]
+    assert interesting.priority == IntelligencePriority.INTERESTING
+
+    important_discovery = DiscoveryEngine()
+    important_items = [
+        _queued(
+            _strong_story(title="Major India technology development"),
+            IntelligencePriority.IMPORTANT,
+        )
+    ]
+    important_candidates = important_discovery.evaluate(important_items)
+    assert len(important_candidates) == 1
+    important = important_candidates[0]
+    assert important.priority == IntelligencePriority.IMPORTANT
+
+    interesting_event = adapter.create_discovery_event(interesting)
+    important_event = adapter.create_discovery_event(important)
+
+    # 1. interesting discovery creates a valid InteractionEvent
+    assert interesting_event.message == (
+        "I found something you might find interesting: "
+        "DNA data storage breakthrough"
+    )
+    assert interesting_event.event_type.startswith("discovery:")
+    assert interesting_event.priority in {
+        InteractionPriority.LOW,
+        InteractionPriority.NORMAL,
+        InteractionPriority.HIGH,
+        InteractionPriority.CRITICAL,
+    }
+
+    # 2. important discovery maps to HIGH
+    assert important_event.priority == InteractionPriority.HIGH
+
+    # 3. interesting discovery maps to NORMAL
+    assert interesting_event.priority == InteractionPriority.NORMAL
+
+    now = datetime.now()
+
+    def _idle_context(**overrides) -> InteractionContext:
+        values = dict(
+            current_time=now,
+            session_state=SessionState.IDLE,
+            idle_seconds=400,
+            user_active=False,
+            user_busy=False,
+            recent_interaction=False,
+            proactive_enabled=True,
+        )
+        values.update(overrides)
+        return InteractionContext(**values)
+
+    idle_context = _idle_context()
+
+    busy_engine = InteractionEngine()
+    busy_decision = adapter.evaluate_discovery(
+        interesting,
+        busy_engine,
+        _idle_context(user_busy=True),
+    )
+
+    # 4. user busy causes WAIT
+    assert busy_decision == InteractionDecision.WAIT
+
+    quiet_engine = InteractionEngine()
+    quiet_engine.set_quiet_mode(True)
+    quiet_decision = adapter.evaluate_discovery(
+        interesting,
+        quiet_engine,
+        idle_context,
+    )
+
+    # 5. quiet mode causes WAIT
+    assert quiet_decision == InteractionDecision.WAIT
+
+    disabled_engine = InteractionEngine()
+    disabled_decision = adapter.evaluate_discovery(
+        interesting,
+        disabled_engine,
+        _idle_context(proactive_enabled=False),
+    )
+
+    # 6. proactive disabled causes WAIT
+    assert disabled_decision == InteractionDecision.WAIT
+
+    speak_engine = InteractionEngine()
+    speak_decision = adapter.evaluate_discovery(
+        interesting,
+        speak_engine,
+        idle_context,
+    )
+
+    # 7. a permitted discovery can produce SPEAK
+    assert speak_decision == InteractionDecision.SPEAK
+
+    # 8. evaluating a discovery does not mark it discovered
+    evaluated_engine = DiscoveryEngine()
+    evaluated_candidate = evaluated_engine.evaluate(
+        interesting_items
+    )[0]
+    adapter.evaluate_discovery(
+        evaluated_candidate,
+        InteractionEngine(),
+        idle_context,
+    )
+    assert evaluated_engine.has_been_discovered(
+        evaluated_candidate.story
+    ) is False
+
+    # 9–10. successful delivery records interaction and marks discovered
+    delivery_discovery = DiscoveryEngine()
+    delivery_candidate = delivery_discovery.evaluate(
+        interesting_items
+    )[0]
+    delivery_engine = InteractionEngine()
+    delivery_time = now
+
+    assert delivery_engine._daily_proactive_count == 0
+    assert delivery_engine.last_proactive_interaction is None
+    assert delivery_discovery.has_been_discovered(
+        delivery_candidate.story
+    ) is False
+
+    adapter.deliver_discovery(
+        delivery_candidate,
+        delivery_engine,
+        delivery_discovery,
+        delivery_time,
+    )
+
+    assert delivery_engine._daily_proactive_count == 1
+    assert (
+        delivery_engine.last_proactive_interaction
+        == delivery_time
+    )
+    assert delivery_discovery.has_been_discovered(
+        delivery_candidate.story
+    ) is True
+
+    # After successful delivery, the DiscoveryEngine must
+    # suppress the story from future discovery evaluation.
+    remaining = delivery_discovery.evaluate(
+        interesting_items
+    )
+
+    assert remaining == []
+
+    # 11. no duplicate interaction logic is introduced
+    evaluate_source = inspect.getsource(
+        IntelligenceInteractionAdapter.evaluate_discovery
+    )
+    assert "interaction_engine.evaluate" in evaluate_source
+    assert "quiet_mode" not in evaluate_source
+    assert "user_busy" not in evaluate_source
+    assert "proactive_enabled" not in evaluate_source
+    assert "InteractionDecision.SPEAK" not in evaluate_source
+    assert "InteractionDecision.WAIT" not in evaluate_source
+
+    discovery_source = inspect.getsource(DiscoveryEngine)
+    assert "InteractionDecision" not in discovery_source
+    assert "should_speak" not in discovery_source
+
+    # ---------------------------------------------------------
+    # Persistent discovery history
+    # ---------------------------------------------------------
+
+    clear_intelligence_discovery_history()
+    engine_persist_1 = DiscoveryEngine()
+    story_url = _strong_story(title="Persistent URL test", url="https://example.com/persist")
+    assert not engine_persist_1.has_been_discovered(story_url)
+    engine_persist_1.mark_discovered(story_url)
+    assert engine_persist_1.has_been_discovered(story_url)
+    assert "url:https://example.com/persist" in get_intelligence_discovery_history()
+
+    engine_persist_2 = DiscoveryEngine()
+    assert engine_persist_2.has_been_discovered(story_url)
+
+    clear_intelligence_discovery_history()
+    engine_title_1 = DiscoveryEngine()
+    story_title = _strong_story(title="Title Only Persistent")
+    engine_title_1.mark_discovered(story_title)
+    engine_title_2 = DiscoveryEngine()
+    assert engine_title_2.has_been_discovered(story_title)
+
+    clear_intelligence_discovery_history()
+    engine_eval = DiscoveryEngine()
+    story_eval_only = _strong_story(title="Eval Only Persistent")
+    engine_eval.evaluate([_queued(story_eval_only)])
+    assert not engine_eval.has_been_discovered(story_eval_only)
+    assert get_intelligence_discovery_history() == []
+
+    clear_intelligence_discovery_history()
+    engine_clear = DiscoveryEngine()
+    story_clear = _strong_story(title="Clear Persistent Test")
+    engine_clear.mark_discovered(story_clear)
+    assert engine_clear.has_been_discovered(story_clear)
+    assert get_intelligence_discovery_history()
+    engine_clear.clear_discovery_history()
+    assert not engine_clear.has_been_discovered(story_clear)
+    assert get_intelligence_discovery_history() == []
+
+    clear_intelligence_discovery_history()
 
     print()
     print("All discovery tests passed.")

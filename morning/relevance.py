@@ -1,6 +1,9 @@
-from dataclasses import dataclass
+import re
+from dataclasses import dataclass, field
 
 from morning.context import MorningBriefingContext
+
+from intelligence.feedback import FeedbackProfile
 
 
 @dataclass
@@ -11,6 +14,9 @@ class BriefingCandidate:
     content: str
     score: int
     reason: str
+    category: str | None = None
+    entities: list[str] = field(default_factory=list)
+    source: str | None = None
 
 
 class BriefingRelevanceSelector:
@@ -23,9 +29,40 @@ class BriefingRelevanceSelector:
 
     MAX_SELECTED_ITEMS = 4
 
+    def _feedback_adjustment(
+        self,
+        candidate: BriefingCandidate,
+        profile: FeedbackProfile | None,
+    ) -> int:
+        if not profile:
+            return 0
+
+        adjustment = 0
+
+        if candidate.category:
+            adjustment += profile.category_bonus(candidate.category)
+
+        if candidate.entities:
+            seen = set()
+            entity_total = 0
+            for name in candidate.entities:
+                key = name.strip().lower()
+                if key in seen:
+                    continue
+                seen.add(key)
+                entity_total += profile.entity_bonus(key)
+            adjustment += entity_total
+
+        if candidate.source:
+            adjustment += profile.source_bonus(candidate.source.strip().lower())
+
+        # Bound total feedback contribution
+        return max(-15, min(15, adjustment))
+
     def select(
         self,
         context: MorningBriefingContext,
+        feedback_profile: FeedbackProfile | None = None,
     ) -> list[BriefingCandidate]:
         """Return the most relevant current briefing candidates."""
 
@@ -83,12 +120,19 @@ class BriefingRelevanceSelector:
         # ---------------------------------------------------------
 
         for news_item in context.news_items:
+            source = None
+            # Try to extract source from "Title (Source)" format
+            m = re.search(r"\(([^()]+)\)\s*$", news_item)
+            if m:
+                source = m.group(1).strip()
+
             candidates.append(
                 BriefingCandidate(
                     topic="news",
                     content=news_item,
                     score=40,
                     reason="Potentially useful current information",
+                    source=source,
                 )
             )
 
@@ -121,7 +165,7 @@ class BriefingRelevanceSelector:
             )
 
         # ---------------------------------------------------------
-        # Novelty suppression
+        # Novelty suppression + feedback adjustment
         # ---------------------------------------------------------
 
         filtered: list[BriefingCandidate] = []
@@ -138,6 +182,10 @@ class BriefingRelevanceSelector:
                 in context.recently_discussed_topics
             ):
                 candidate.score -= 25
+
+            # Apply small personalization adjustment
+            adjustment = self._feedback_adjustment(candidate, feedback_profile)
+            candidate.score += adjustment
 
             filtered.append(candidate)
 

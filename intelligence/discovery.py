@@ -5,6 +5,11 @@ from intelligence.feedback import FeedbackProfile
 from intelligence.models import IntelligenceStory
 from intelligence.priority import IntelligencePriority
 from intelligence.queue import QueuedIntelligence
+from memory.database import (
+    clear_intelligence_discovery_history,
+    get_intelligence_discovery_history,
+    save_intelligence_discovery,
+)
 
 
 @dataclass
@@ -14,6 +19,8 @@ class DiscoveryCandidate:
     story: IntelligenceStory
     score: int
     reason: str
+    signals: list[str]
+    priority: str = IntelligencePriority.INTERESTING
 
 
 class DiscoveryEngine:
@@ -44,6 +51,12 @@ class DiscoveryEngine:
             else FeedbackProfile()
         )
         self._discovered_ids: set[str] = set()
+        self.load_discovery_history()
+
+    def load_discovery_history(self) -> None:
+        """Load persisted discovery identities into memory."""
+        persisted = get_intelligence_discovery_history()
+        self._discovered_ids = set(persisted)
 
     def _story_identity(
         self,
@@ -64,9 +77,9 @@ class DiscoveryEngine:
     ) -> None:
         """Record that a story has already been surfaced."""
 
-        self._discovered_ids.add(
-            self._story_identity(story)
-        )
+        identity = self._story_identity(story)
+        self._discovered_ids.add(identity)
+        save_intelligence_discovery(identity)
 
     def has_been_discovered(
         self,
@@ -83,6 +96,7 @@ class DiscoveryEngine:
         """Forget recently surfaced discovery identities."""
 
         self._discovered_ids.clear()
+        clear_intelligence_discovery_history()
 
     def _freshness_factor(
         self,
@@ -139,36 +153,43 @@ class DiscoveryEngine:
 
             score = 0
             reasons: list[str] = []
+            signals: list[str] = []
 
             # Priority
             if item.priority == IntelligencePriority.IMPORTANT:
                 score += self.IMPORTANT_BASE_SCORE
+                signals.append("priority")
 
             elif item.priority == IntelligencePriority.INTERESTING:
                 score += self.INTERESTING_BASE_SCORE
+                signals.append("priority")
 
             # Importance
             score += story.importance // 2
 
             if story.importance >= 70:
                 reasons.append("high importance")
+                signals.append("importance")
 
             # Novelty
             score += story.novelty // 2
 
             if story.novelty >= 80:
                 reasons.append("high novelty")
+                signals.append("novelty")
 
             # Personal relevance
             score += story.personal_relevance // 2
 
             if story.personal_relevance >= 60:
                 reasons.append("personally relevant")
+                signals.append("personal_relevance")
 
             # Confidence
             if story.confidence >= 80:
                 score += 10
                 reasons.append("high confidence")
+                signals.append("confidence")
 
             elif story.confidence < 50:
                 score -= 20
@@ -179,6 +200,11 @@ class DiscoveryEngine:
             )
             score += feedback_score
             reasons.extend(feedback_reasons)
+
+            if feedback_score > 0:
+                signals.append("positive_feedback")
+            elif feedback_score < 0:
+                signals.append("negative_feedback")
 
             # Freshness
             freshness_factor = self._freshness_factor(
@@ -192,6 +218,7 @@ class DiscoveryEngine:
 
             if freshness_contribution >= 15:
                 reasons.append("fresh")
+                signals.append("freshness")
 
             # Minimum threshold
             if score < self.MINIMUM_SCORE:
@@ -205,6 +232,8 @@ class DiscoveryEngine:
                     story=story,
                     score=score,
                     reason="; ".join(reasons),
+                    signals=signals,
+                    priority=item.priority,
                 )
             )
 

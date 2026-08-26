@@ -4,6 +4,8 @@ from morning.prompt import MorningPromptBuilder
 from morning.relevance import BriefingRelevanceSelector
 from morning.context import with_selected_candidates
 
+from intelligence.feedback import FeedbackProfile
+
 
 class MorningBriefingGenerator:
     """Generates a natural VYRA morning briefing from verified facts."""
@@ -21,12 +23,14 @@ class MorningBriefingGenerator:
     def generate(
         self,
         context: MorningBriefingContext,
+        feedback_profile: FeedbackProfile | None = None,
     ) -> str:
         """Select relevant facts and generate grounded briefing."""
 
         selected_candidates = (
             self.relevance_selector.select(
-                context
+                context,
+                feedback_profile=feedback_profile,
             )
         )
 
