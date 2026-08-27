@@ -433,3 +433,67 @@ class HumorEngine:
             return 80
 
         return 55
+
+
+# ---------------------------------------------------------------------
+# Humor policy guardrails
+# ---------------------------------------------------------------------
+
+from datetime import datetime, timedelta
+from context.context import SessionState
+
+
+class HumorPolicy:
+    """In-memory humor eligibility guardrails."""
+
+    HUMOR_COOLDOWN_MINUTES = 120
+    MAX_HUMOR_INTERACTIONS_PER_DAY = 3
+
+    def __init__(self) -> None:
+        self.last_delivered_at: datetime | None = None
+        self.daily_count: int = 0
+        self.daily_date: str | None = None
+
+    def reset_daily_count_if_needed(self, now: datetime) -> None:
+        """Reset daily count when a new calendar day begins."""
+        today = now.date().isoformat()
+        if self.daily_date != today:
+            self.daily_date = today
+            self.daily_count = 0
+
+    def can_surface(self, now: datetime, context) -> bool:
+        """Return True if humor is currently eligible to surface."""
+        if not getattr(context, "proactive_enabled", True):
+            return False
+
+        if getattr(context, "user_busy", False):
+            return False
+
+        session_state = getattr(context, "session_state", None)
+        if session_state in {
+            SessionState.STARTING,
+            SessionState.ENDING,
+            SessionState.AWAY,
+        }:
+            return False
+
+        # Daily limit check without mutating state
+        today = now.date().isoformat()
+        effective_count = self.daily_count if self.daily_date == today else 0
+        if effective_count >= self.MAX_HUMOR_INTERACTIONS_PER_DAY:
+            return False
+
+        # Cooldown check
+        if self.last_delivered_at is not None:
+            elapsed = now - self.last_delivered_at
+            if elapsed < timedelta(minutes=self.HUMOR_COOLDOWN_MINUTES):
+                return False
+
+        return True
+
+    def record_delivery(self, now: datetime) -> None:
+        """Record an actual humor delivery."""
+        self.reset_daily_count_if_needed(now)
+        self.daily_count += 1
+        self.last_delivered_at = now
+        self.daily_date = now.date().isoformat()

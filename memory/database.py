@@ -15,7 +15,8 @@ def initialize_database() -> None:
     """Create the VYRA database tables if they do not exist."""
     DATA_DIR.mkdir(exist_ok=True)
 
-    with sqlite3.connect(DATABASE_PATH) as connection:
+    connection = sqlite3.connect(DATABASE_PATH)
+    try:
         connection.execute(
             """
             CREATE TABLE IF NOT EXISTS memories (
@@ -94,13 +95,16 @@ def initialize_database() -> None:
         )
 
         connection.commit()
+    finally:
+        connection.close()
 
     migrate_tasks_table()
 
 def migrate_tasks_table() -> None:
     """Add new task columns to an existing VYRA database."""
 
-    with sqlite3.connect(DATABASE_PATH) as connection:
+    connection = sqlite3.connect(DATABASE_PATH)
+    try:
         cursor = connection.execute(
             "PRAGMA table_info(tasks)"
         )
@@ -124,10 +128,13 @@ def migrate_tasks_table() -> None:
                 )
 
         connection.commit()
+    finally:
+        connection.close()
 
 def save_memory(memory_type: str, content: str) -> None:
     """Save a long-term memory."""
-    with sqlite3.connect(DATABASE_PATH) as connection:
+    connection = sqlite3.connect(DATABASE_PATH)
+    try:
         connection.execute(
             """
             INSERT INTO memories (memory_type, content)
@@ -137,6 +144,8 @@ def save_memory(memory_type: str, content: str) -> None:
         )
 
         connection.commit()
+    finally:
+        connection.close()
 
 
 def tokenize(text: str) -> set[str]:
@@ -162,7 +171,8 @@ def get_relevant_memories(query: str) -> list[tuple[str, str]]:
     This is intentionally a simple first version.
     We will replace it with semantic retrieval later.
     """
-    with sqlite3.connect(DATABASE_PATH) as connection:
+    connection = sqlite3.connect(DATABASE_PATH)
+    try:
         cursor = connection.execute(
             """
             SELECT memory_type, content
@@ -172,6 +182,8 @@ def get_relevant_memories(query: str) -> list[tuple[str, str]]:
         )
 
         memories = cursor.fetchall()
+    finally:
+        connection.close()
 
     query_words = tokenize(query)
 
@@ -189,7 +201,8 @@ def get_relevant_memories(query: str) -> list[tuple[str, str]]:
 
 def save_task(title: str, due_at: str | None = None) -> None:
     """Save a new task."""
-    with sqlite3.connect(DATABASE_PATH) as connection:
+    connection = sqlite3.connect(DATABASE_PATH)
+    try:
         connection.execute(
             """
             INSERT INTO tasks (title, due_at)
@@ -199,12 +212,15 @@ def save_task(title: str, due_at: str | None = None) -> None:
         )
 
         connection.commit()
+    finally:
+        connection.close()
 
 
 def get_pending_tasks() -> list[tuple]:
     """Return active tasks with their full reminder state."""
 
-    with sqlite3.connect(DATABASE_PATH) as connection:
+    connection = sqlite3.connect(DATABASE_PATH)
+    try:
         cursor = connection.execute(
             """
             SELECT
@@ -233,11 +249,14 @@ def get_pending_tasks() -> list[tuple]:
         )
 
         return cursor.fetchall()
+    finally:
+        connection.close()
 
 
 def complete_task(task_id: int) -> None:
     """Mark a task as completed."""
-    with sqlite3.connect(DATABASE_PATH) as connection:
+    connection = sqlite3.connect(DATABASE_PATH)
+    try:
         connection.execute(
             """
             UPDATE tasks
@@ -248,10 +267,13 @@ def complete_task(task_id: int) -> None:
         )
 
         connection.commit()
+    finally:
+        connection.close()
 
 def delete_task(task_id: int) -> None:
     """Delete a task by its ID."""
-    with sqlite3.connect(DATABASE_PATH) as connection:
+    connection = sqlite3.connect(DATABASE_PATH)
+    try:
         connection.execute(
             """
             DELETE FROM tasks
@@ -261,11 +283,14 @@ def delete_task(task_id: int) -> None:
         )
 
         connection.commit()
+    finally:
+        connection.close()
 
 def mark_task_due(task_id: int) -> None:
     """Mark a scheduled task as due."""
 
-    with sqlite3.connect(DATABASE_PATH) as connection:
+    connection = sqlite3.connect(DATABASE_PATH)
+    try:
         connection.execute(
             """
             UPDATE tasks
@@ -277,6 +302,8 @@ def mark_task_due(task_id: int) -> None:
         )
 
         connection.commit()
+    finally:
+        connection.close()
 
 
 def mark_task_delivered(task_id: int) -> None:
@@ -286,7 +313,8 @@ def mark_task_delivered(task_id: int) -> None:
         timespec="seconds"
     )
 
-    with sqlite3.connect(DATABASE_PATH) as connection:
+    connection = sqlite3.connect(DATABASE_PATH)
+    try:
         connection.execute(
             """
             UPDATE tasks
@@ -298,6 +326,8 @@ def mark_task_delivered(task_id: int) -> None:
         )
 
         connection.commit()
+    finally:
+        connection.close()
 
 
 def mark_task_missed(task_id: int) -> None:
@@ -307,7 +337,8 @@ def mark_task_missed(task_id: int) -> None:
         timespec="seconds"
     )
 
-    with sqlite3.connect(DATABASE_PATH) as connection:
+    connection = sqlite3.connect(DATABASE_PATH)
+    try:
         connection.execute(
             """
             UPDATE tasks
@@ -319,6 +350,8 @@ def mark_task_missed(task_id: int) -> None:
         )
 
         connection.commit()
+    finally:
+        connection.close()
 
 
 def complete_task(task_id: int) -> None:
@@ -328,7 +361,8 @@ def complete_task(task_id: int) -> None:
         timespec="seconds"
     )
 
-    with sqlite3.connect(DATABASE_PATH) as connection:
+    connection = sqlite3.connect(DATABASE_PATH)
+    try:
         connection.execute(
             """
             UPDATE tasks
@@ -340,11 +374,14 @@ def complete_task(task_id: int) -> None:
         )
 
         connection.commit()
+    finally:
+        connection.close()
 
 def get_missed_tasks() -> list[tuple]:
     """Return tasks that were missed and have not been handled yet."""
 
-    with sqlite3.connect(DATABASE_PATH) as connection:
+    connection = sqlite3.connect(DATABASE_PATH)
+    try:
         cursor = connection.execute(
             """
             SELECT
@@ -363,11 +400,14 @@ def get_missed_tasks() -> list[tuple]:
         )
 
         return cursor.fetchall()
+    finally:
+        connection.close()
 
 def acknowledge_missed_task(task_id: int) -> None:
     """Mark a missed reminder as acknowledged by the user."""
 
-    with sqlite3.connect(DATABASE_PATH) as connection:
+    connection = sqlite3.connect(DATABASE_PATH)
+    try:
         connection.execute(
             """
             UPDATE tasks
@@ -379,6 +419,8 @@ def acknowledge_missed_task(task_id: int) -> None:
         )
 
         connection.commit()
+    finally:
+        connection.close()
 
 def save_briefing_history(
     briefing_date: str,
@@ -388,7 +430,8 @@ def save_briefing_history(
 ) -> None:
     """Save lightweight history about a delivered briefing."""
 
-    with sqlite3.connect(DATABASE_PATH) as connection:
+    connection = sqlite3.connect(DATABASE_PATH)
+    try:
         connection.execute(
             """
             INSERT INTO briefing_history (
@@ -408,13 +451,16 @@ def save_briefing_history(
         )
 
         connection.commit()
+    finally:
+        connection.close()
 
 def get_recent_briefing_history(
     limit: int = 7,
 ) -> list[tuple]:
     """Return recent briefing history entries."""
 
-    with sqlite3.connect(DATABASE_PATH) as connection:
+    connection = sqlite3.connect(DATABASE_PATH)
+    try:
         cursor = connection.execute(
             """
             SELECT
@@ -430,13 +476,16 @@ def get_recent_briefing_history(
         )
 
         return cursor.fetchall()
+    finally:
+        connection.close()
 
 def get_today_briefing_history(
     briefing_date: str,
 ) -> list[tuple]:
     """Return today's briefing history."""
 
-    with sqlite3.connect(DATABASE_PATH) as connection:
+    connection = sqlite3.connect(DATABASE_PATH)
+    try:
         cursor = connection.execute(
             """
             SELECT
@@ -452,6 +501,8 @@ def get_today_briefing_history(
         )
 
         return cursor.fetchall()
+    finally:
+        connection.close()
 
 def save_important_place(
     name: str,
@@ -464,7 +515,8 @@ def save_important_place(
 ) -> None:
     """Save a personally important place."""
 
-    with sqlite3.connect(DATABASE_PATH) as connection:
+    connection = sqlite3.connect(DATABASE_PATH)
+    try:
         connection.execute(
             """
             INSERT INTO important_places (
@@ -490,12 +542,15 @@ def save_important_place(
         )
 
         connection.commit()
+    finally:
+        connection.close()
 
 
 def get_important_places() -> list[tuple]:
     """Return all personally important places."""
 
-    with sqlite3.connect(DATABASE_PATH) as connection:
+    connection = sqlite3.connect(DATABASE_PATH)
+    try:
         cursor = connection.execute(
             """
             SELECT
@@ -514,6 +569,8 @@ def get_important_places() -> list[tuple]:
         )
 
         return cursor.fetchall()
+    finally:
+        connection.close()
 
 def save_intelligence_feedback(
     feedback_type: str,
@@ -525,9 +582,8 @@ def save_intelligence_feedback(
 
     entities_text = ",".join(entity_names)
 
-    with sqlite3.connect(
-        DATABASE_PATH
-    ) as connection:
+    connection = sqlite3.connect(DATABASE_PATH)
+    try:
         connection.execute(
             """
             INSERT INTO intelligence_feedback (
@@ -547,14 +603,15 @@ def save_intelligence_feedback(
         )
 
         connection.commit()
+    finally:
+        connection.close()
 
 
 def get_intelligence_feedback() -> list[tuple]:
     """Return all persisted intelligence feedback."""
 
-    with sqlite3.connect(
-        DATABASE_PATH
-    ) as connection:
+    connection = sqlite3.connect(DATABASE_PATH)
+    try:
         cursor = connection.execute(
             """
             SELECT
@@ -570,6 +627,8 @@ def get_intelligence_feedback() -> list[tuple]:
         )
 
         return cursor.fetchall()
+    finally:
+        connection.close()
 
 def clear_intelligence_feedback() -> None:
     """Delete all intelligence feedback.
@@ -577,23 +636,26 @@ def clear_intelligence_feedback() -> None:
     Intended for tests/development cleanup.
     """
 
-    with sqlite3.connect(
-        DATABASE_PATH
-    ) as connection:
+    connection = sqlite3.connect(DATABASE_PATH)
+    try:
         connection.execute(
             "DELETE FROM intelligence_feedback"
         )
 
         connection.commit()
+    finally:
+        connection.close()
 
 def save_intelligence_discovery(
     story_identity: str,
 ) -> None:
     """Persist that an intelligence discovery was delivered."""
 
-    with sqlite3.connect(
+    connection = sqlite3.connect(
         DATABASE_PATH
-    ) as connection:
+    )
+
+    try:
         connection.execute(
             """
             INSERT OR IGNORE INTO intelligence_discovery_history (
@@ -606,13 +668,18 @@ def save_intelligence_discovery(
 
         connection.commit()
 
+    finally:
+        connection.close()
+
 
 def get_intelligence_discovery_history() -> list[str]:
     """Return all persisted discovery identities."""
 
-    with sqlite3.connect(
+    connection = sqlite3.connect(
         DATABASE_PATH
-    ) as connection:
+    )
+
+    try:
         cursor = connection.execute(
             """
             SELECT story_identity
@@ -626,18 +693,23 @@ def get_intelligence_discovery_history() -> list[str]:
             for row in cursor.fetchall()
         ]
 
+    finally:
+        connection.close()
+
 
 def clear_intelligence_discovery_history() -> None:
-    """Clear persisted discovery history.
+    """Clear persisted discovery history."""
 
-    Intended for development/testing cleanup.
-    """
-
-    with sqlite3.connect(
+    connection = sqlite3.connect(
         DATABASE_PATH
-    ) as connection:
+    )
+
+    try:
         connection.execute(
             "DELETE FROM intelligence_discovery_history"
         )
 
         connection.commit()
+
+    finally:
+        connection.close()

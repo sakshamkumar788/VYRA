@@ -11,6 +11,8 @@ from interaction.engine import InteractionEngine
 from interaction.policy import (
     InteractionContext,
     InteractionDecision,
+    InteractionEvent,
+    InteractionPriority,
 )
 
 from intelligence.geography import (
@@ -44,6 +46,7 @@ from intelligence.priority import (
     PriorityDecision,
 )
 
+
 from intelligence.entities import EntityExtractor
 
 from intelligence.deduplication import (
@@ -59,6 +62,23 @@ from intelligence.user_preferences import (
 )
 
 from intelligence.feedback import FeedbackProfile
+
+from intelligence.humor import (
+    HumorEngine,
+    HumorCandidate,
+    HumorStyle,
+    HumorPolicy,
+)
+
+
+from intelligence.fun_facts import (
+    FunFactEngine,
+)
+
+from intelligence.fun_fact_selector import (
+    FunFactSelector,
+    FunFactCandidate,
+)
 
 from intelligence.feedback_handler import (
     IntelligenceFeedbackHandler,
@@ -93,6 +113,18 @@ class IntelligenceEngine:
         self.feedback_handler = (
             IntelligenceFeedbackHandler(
                 self.feedback_profile
+            )
+        )
+
+        self.humor_engine = HumorEngine()
+        self.humor_policy = HumorPolicy()
+
+        self.fun_fact_engine = FunFactEngine()
+
+        self.fun_fact_selector = (
+            FunFactSelector(
+                fun_fact_engine=self.fun_fact_engine,
+                feedback_profile=self.feedback_profile,
             )
         )
 
@@ -292,6 +324,90 @@ class IntelligenceEngine:
         )   
 
         return candidates[:limit]
+
+    def get_fun_fact_candidate(
+        self,
+        category: str | None = None,
+    ) -> FunFactCandidate | None:
+        """Return a personalized fun-fact candidate."""
+
+        return self.fun_fact_selector.select(
+            category=category,
+        )
+    
+    def evaluate_fun_fact_interaction(
+        self,
+        candidate: FunFactCandidate,
+        interaction_engine: InteractionEngine,
+        context: InteractionContext,
+    ) -> InteractionDecision:
+        """Let the existing InteractionEngine decide whether the fun fact should be spoken."""
+
+        return self.fun_fact_selector.evaluate_interaction(
+            candidate,
+            interaction_engine,
+            context,
+        )
+
+    def deliver_fun_fact(
+        self,
+        candidate: FunFactCandidate,
+        current_time: datetime | None = None,
+    ) -> None:
+        """Record that a fun fact was actually delivered."""
+
+        if current_time is None:
+            current_time = datetime.now()
+
+        self.fun_fact_selector.record_delivery(
+            current_time,
+        )
+
+    def get_humor_candidate(
+        self,
+        context: str,
+        style: str = HumorStyle.PLAYFUL,
+    ) -> HumorCandidate | None:
+        """Return a humor candidate for the given context."""
+        return self.humor_engine.generate(
+            context=context,
+            style=style,
+        )
+
+    def evaluate_humor_interaction(
+        self,
+        candidate: HumorCandidate,
+        interaction_engine: InteractionEngine,
+        context: InteractionContext,
+    ) -> InteractionDecision:
+        """Ask InteractionEngine whether humor should be spoken now."""
+        now = context.current_time
+        if not self.humor_policy.can_surface(now, context):
+            return InteractionDecision.WAIT
+
+        event = InteractionEvent(
+            event_type="humor",
+            message=candidate.text,
+            priority=InteractionPriority.LOW,
+        )
+        return interaction_engine.evaluate(event, context)
+
+    def deliver_humor(
+        self,
+        candidate: HumorCandidate,
+        interaction_engine: InteractionEngine,
+        current_time: datetime | None = None,
+    ) -> None:
+        """Record actual delivery of humor."""
+        if current_time is None:
+            current_time = datetime.now()
+        event = InteractionEvent(
+            event_type="humor",
+            message=candidate.text,
+            priority=InteractionPriority.LOW,
+        )
+        interaction_engine.record_proactive_interaction(event, current_time)
+        self.humor_policy.record_delivery(current_time)
 
     def evaluate_discovery(
         self,
