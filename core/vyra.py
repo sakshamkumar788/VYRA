@@ -394,6 +394,103 @@ TASK RULES:
 
         return True
 
+    def handle_location_query(
+        self,
+        user_input: str,
+    ) -> bool:
+        """Handle explicit location intents with authoritative location subsystem."""
+
+        import re
+
+        patterns = [
+            r"\bwhere am i\b",
+            r"\bwhere am i right now\b",
+            r"\bwhere am i using gps\b",
+            r"\bwhat is my location\b",
+            r"\bwhat's my location\b",
+            r"\bwhat city am i in\b",
+            r"\bwhat location am i at\b",
+        ]
+
+        lowered = user_input.lower()
+
+        if not any(re.search(p, lowered) for p in patterns):
+            return False
+
+        try:
+            loc = self.location_service.get_current_location()
+
+            city = loc.city or ""
+            region = loc.region or ""
+            country = loc.country or ""
+
+            parts = [p for p in [city, region, country] if p]
+
+            if parts:
+                location_name = ", ".join(parts)
+                print(
+                    f"VYRA: You are in {location_name}.\n"
+                )
+            else:
+                print(
+                    "VYRA: I can't determine your current location right now.\n"
+                )
+
+        except Exception:
+            print(
+                "VYRA: I can't determine your current location right now.\n"
+            )
+
+        return True
+
+    def handle_current_affairs_query(
+        self,
+        user_input: str,
+    ) -> bool:
+        """Handle news/current-affairs intents using real source intelligence."""
+
+        import re
+
+        patterns = [
+            r'^\s*news\s*\??\s*$',
+            r'^\s*latest\s+news\s*$',
+            r'^\s*what\'?s\s+in\s+the\s+news\s*$',
+            r'^\s*what\s+is\s+in\s+the\s+news\s*$',
+            r'^\s*current\s+affairs\s*$',
+            r'^\s*latest\s+current\s+affairs\s*$',
+            r'^\s*what\'?s?\s+happening\s*$',
+            r'^\s*what\s+is\s+happening\s*$',
+            r'^\s*what\'?s?\s+happening\s+in\s+india\s*$',
+            r'^\s*what\s+is\s+happening\s+in\s+india\s*$',
+            r'^\s*what\'?s?\s+happening\s+in\s+punjab\s*$',
+            r'^\s*what\s+is\s+happening\s+in\s+punjab\s*$',
+        ]
+
+        if not any(re.search(p, user_input, re.IGNORECASE) for p in patterns):
+            return False
+
+        try:
+            from intelligence.registry import default_source_registry
+            from intelligence.setup import build_ingestion_engine
+            from intelligence.current_affairs import CurrentAffairsEngine
+            from intelligence.current_affairs_formatter import CurrentAffairsFormatter
+
+            registry = default_source_registry()
+            ingestion = build_ingestion_engine(registry)
+            ingested = ingestion.fetch_all()
+            stories = [item.story for item in ingested]
+
+            engine = CurrentAffairsEngine()
+            brief = engine.build(stories)
+            formatter = CurrentAffairsFormatter()
+            output = formatter.format(brief)
+
+            print(f"VYRA: {output}\n")
+        except Exception:
+            print("VYRA: I couldn't find any current developments worth summarizing right now.\n")
+
+        return True
+
     # =============================================================
     # TASKS
     # =============================================================
@@ -1238,10 +1335,23 @@ Rules:
             self.context_manager.mark_user_interaction()
 
             # -----------------------------------------------------
-            # Exit
+            # Exit / Goodbye
             # -----------------------------------------------------
 
-            if user_input.lower() == "exit":
+            import re
+
+            normalized_input = re.sub(r'^[.!?]+|[.!?]+$', '', user_input.strip().lower())
+
+            goodbye_commands = {
+                "exit",
+                "quit",
+                "bye",
+                "goodbye",
+                "goodnight",
+                "good night",
+            }
+
+            if normalized_input in goodbye_commands:
 
                 self.activity_monitor.stop()
                 self.proactive_loop.stop()
@@ -1350,6 +1460,24 @@ Rules:
                 print(
                     f"VYRA: {tool_result}\n"
                 )
+                continue
+
+            # -----------------------------------------------------
+            # Location intent
+            # -----------------------------------------------------
+
+            if self.handle_location_query(
+                user_input
+            ):
+                continue
+
+            # -----------------------------------------------------
+            # Current affairs / news intent
+            # -----------------------------------------------------
+
+            if self.handle_current_affairs_query(
+                user_input
+            ):
                 continue
 
             # -----------------------------------------------------
