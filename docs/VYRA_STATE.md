@@ -1785,46 +1785,42 @@ Persistent feedback
 Feedback decay
 Feedback-aware intelligence scoring
 Feedback-aware discovery
+7.70 Feedback decay / preference balancing
+7.71 Real-time feedback
+7.72 Feedback-aware discovery
+7.73 Negative-feedback discovery suppression
+7.74 Discovery repetition suppression
+7.75 Discovery freshness
+7.76 Discovery explanation metadata
+7.77 Discovery → InteractionEngine integration
+7.78 Persistent discovery history
+7.79 Personalized discovery frequency
+7.80 Explicit user information preferences
+7.81 Preferences integrated into IntelligenceEngine
+7.84 Personalized fun-fact selection
+7.85 Fun-fact integration into IntelligenceEngine
+7.86 Natural humor integration
+7.87 Humor frequency and context guardrails
 ```
+
+**Database reliability correction**
+
+SQLite connections in the affected database functions are now explicitly closed using try/finally patterns. ResourceWarning checks for the intelligence/humor path now pass, and all `memory/database.py` connection sites reliably close connections on normal and exceptional paths.
 
 ---
 
 # 56. CURRENT STEP
 
-**7.76 — Discovery / feedback integration refinement**
+**7.88 — Personalized Intelligence / Discovery Continuity**
 
-The next goal is to improve how VYRA combines learned preferences, freshness, discovery timing, and the InteractionEngine before moving deeper into autonomous/proactive personalization.
+The next goal is to ensure intelligence and discovery remain personalized and continuous across sessions, with improved continuity, preference retention, and proactive timing.
 
 ---
 
 # 57. IMMEDIATE NEXT STEPS
 
 ```text
-7.76  Discovery / feedback integration refinement
-
-7.77  Discovery timing with InteractionEngine
-
-7.78  Persistent discovery history
-
-7.79  Personalized discovery frequency
-
-7.80  User-controlled information preferences
-
-7.81  Better story/entity preference explanations
-
-7.82  Feedback-aware current-affairs selection
-
-7.83  Feedback-aware morning intelligence
-
-7.84  Surprise/fun-fact selection
-
-7.85  Natural humor integration
-
-7.86  Reddit/community intelligence
-
-7.87  Research/deep-tech discovery
-
-7.88  Company/India-market intelligence
+7.88  Personalized Intelligence / Discovery Continuity
 
 7.89  Persistent intelligence history
 
@@ -2006,10 +2002,12 @@ The goal is:
 
 # 63. LAST UPDATED
 
+Last Updated: 7.87
+
 Completed through:
 
-**7.75 — Discovery Freshness**
+**7.87 — Humor frequency and context guardrails**
 
 Next:
 
-**7.76 — Discovery / feedback integration refinement**
+**7.88 — Personalized Intelligence / Discovery Continuity**
