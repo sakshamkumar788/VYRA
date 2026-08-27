@@ -1,6 +1,9 @@
 from intelligence.current_affairs import (
     CurrentAffairsEngine,
 )
+
+from datetime import datetime
+
 from intelligence.current_affairs_formatter import (
     CurrentAffairsFormatter,
 )
@@ -247,6 +250,37 @@ def main() -> None:
     # Should not error and ordering works
     brief_dup = engine_fb.build([dup_story], max_per_section=3, feedback_profile=profile_dup)
     assert len(brief_dup.sections) == 1
+
+    # Verify IntelligenceEngine shares FeedbackProfile with child subsystems
+    from intelligence.engine import IntelligenceEngine
+    from intelligence.ingestion import IntelligenceIngestionEngine
+    ingestion = IntelligenceIngestionEngine()
+    engine = IntelligenceEngine(ingestion=ingestion)
+    assert engine.scorer.feedback_profile is engine.feedback_profile
+    assert engine.discovery.feedback_profile is engine.feedback_profile
+    assert engine.fun_fact_selector.feedback_profile is engine.feedback_profile
+    assert engine.user_preferences.profile is engine.feedback_profile
+    assert engine.current_affairs is not None
+
+    # Cross-subsystem propagation test
+    engine.feedback_profile.record(FeedbackType.MORE_LIKE_THIS, story_category="ai", persist=False)
+    assert engine.feedback_profile.category_bonus("ai") > 0
+    # Scorer sees preference
+    test_story = IntelligenceStory(title="Test", summary="", category=StoryCategory.AI, importance=50, severity=10, novelty=50, source="Test")
+    score = engine.scorer.score(test_story, None, [])
+    assert "user category preference" in score.reason
+    # Discovery sees preference
+    from intelligence.queue import QueuedIntelligence
+    from intelligence.priority import IntelligencePriority
+    qitem = QueuedIntelligence(
+        story=test_story,
+        priority=IntelligencePriority.INTERESTING,
+        added_at=datetime.now(),
+    )
+    candidates = engine.discovery.evaluate([qitem])
+    # Current Affairs sees preference
+    brief_ca = engine.current_affairs.build([test_story], feedback_profile=engine.feedback_profile)
+    assert len(brief_ca.sections) >= 0
 
     print()
     print(

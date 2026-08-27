@@ -132,13 +132,9 @@ class IntelligenceScorer:
         # Category preference
         # ---------------------------------------------------------
 
-        category = (
-            story.category.strip().lower()
-        )
-
         category_bonus = (
             self.feedback_profile
-            .category_bonus(category)
+            .category_bonus(story.category)
         )
 
         if category_bonus:
@@ -173,7 +169,7 @@ class IntelligenceScorer:
 
             entity_bonus = (
                 self.feedback_profile
-                .entity_bonus(entity_name)
+                .entity_bonus(entity.name)
             )
 
             if entity_bonus:

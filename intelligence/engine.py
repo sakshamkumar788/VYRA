@@ -177,6 +177,10 @@ class IntelligenceEngine:
             self.feedback_profile
         )
 
+        from intelligence.current_affairs import CurrentAffairsEngine
+
+        self.current_affairs = CurrentAffairsEngine()
+
         self.interaction_adapter = (
             IntelligenceInteractionAdapter()
         )
@@ -324,6 +328,19 @@ class IntelligenceEngine:
         )   
 
         return candidates[:limit]
+
+    def get_current_affairs(
+        self,
+        stories: list[IntelligenceStory],
+        max_per_section: int = 3,
+    ):
+        """Build a personalized current-affairs brief."""
+
+        return self.current_affairs.build(
+            stories=stories,
+            max_per_section=max_per_section,
+            feedback_profile=self.feedback_profile,
+        )
 
     def get_fun_fact_candidate(
         self,

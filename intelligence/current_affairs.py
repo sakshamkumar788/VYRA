@@ -52,8 +52,7 @@ class CurrentAffairsEngine:
         if not profile:
             return 0
         score = 0
-        cat = story.category.strip().lower()
-        score += profile.category_bonus(cat)
+        score += profile.category_bonus(story.category)
 
         # Entity feedback, avoid duplicates
         seen = set()
@@ -66,14 +65,14 @@ class CurrentAffairsEngine:
             if key in seen:
                 continue
             seen.add(key)
-            entity_total += profile.entity_bonus(key)
+            entity_total += profile.entity_bonus(name)
         # Bound entity contribution
         entity_total = max(-20, min(20, entity_total))
         score += entity_total
 
         # Source feedback, bounded to avoid domination
         if story.source:
-            src_bonus = profile.source_bonus(story.source.strip().lower())
+            src_bonus = profile.source_bonus(story.source)
             src_bonus = max(-10, min(10, src_bonus))
             score += src_bonus
 

@@ -50,11 +50,11 @@ class BriefingRelevanceSelector:
                 if key in seen:
                     continue
                 seen.add(key)
-                entity_total += profile.entity_bonus(key)
+                entity_total += profile.entity_bonus(name)
             adjustment += entity_total
 
         if candidate.source:
-            adjustment += profile.source_bonus(candidate.source.strip().lower())
+            adjustment += profile.source_bonus(candidate.source)
 
         # Bound total feedback contribution
         return max(-15, min(15, adjustment))
