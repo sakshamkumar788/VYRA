@@ -380,6 +380,21 @@ class IntelligenceEngine:
             current_time,
         )
 
+        from memory.database import save_intelligence_delivery
+
+        fact_text = candidate.fact.text
+        story_identity = f"fun_fact:{fact_text.strip().lower()}"
+        save_intelligence_delivery(
+            story_identity=story_identity,
+            title=fact_text,
+            category=candidate.fact.category,
+            source=candidate.fact.source,
+            url=None,
+            delivered_at=current_time,
+            delivery_type="fun_fact",
+            priority=None,
+        )
+
     def get_humor_candidate(
         self,
         context: str,
@@ -426,6 +441,20 @@ class IntelligenceEngine:
         interaction_engine.record_proactive_interaction(event, current_time)
         self.humor_policy.record_delivery(current_time)
 
+        from memory.database import save_intelligence_delivery
+
+        story_identity = f"humor:{candidate.text.strip().lower()}"
+        save_intelligence_delivery(
+            story_identity=story_identity,
+            title=candidate.text,
+            category=None,
+            source=None,
+            url=None,
+            delivered_at=current_time,
+            delivery_type="humor",
+            priority=None,
+        )
+
     def evaluate_discovery(
         self,
         candidate: DiscoveryCandidate,
@@ -466,6 +495,21 @@ class IntelligenceEngine:
             interaction_engine,
             self.discovery,
             current_time,
+        )
+
+        story = candidate.story
+        from memory.database import save_intelligence_delivery
+
+        story_identity = self.discovery._story_identity(story)
+        save_intelligence_delivery(
+            story_identity=story_identity,
+            title=story.title,
+            category=story.category,
+            source=story.source,
+            url=story.url,
+            delivered_at=current_time,
+            delivery_type="discovery",
+            priority=candidate.priority,
         )
 
     def record_feedback(

@@ -94,6 +94,32 @@ def initialize_database() -> None:
             """
         )
 
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS intelligence_delivery_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                story_identity TEXT NOT NULL,
+                title TEXT,
+                category TEXT,
+                source TEXT,
+                url TEXT,
+                delivered_at TIMESTAMP NOT NULL,
+                delivery_type TEXT NOT NULL,
+                priority TEXT
+            )
+            """
+        )
+
+        connection.execute(
+            "CREATE INDEX IF NOT EXISTS idx_intel_delivery_delivered_at ON intelligence_delivery_history(delivered_at)"
+        )
+        connection.execute(
+            "CREATE INDEX IF NOT EXISTS idx_intel_delivery_category ON intelligence_delivery_history(category)"
+        )
+        connection.execute(
+            "CREATE INDEX IF NOT EXISTS idx_intel_delivery_source ON intelligence_delivery_history(source)"
+        )
+
         connection.commit()
     finally:
         connection.close()
@@ -711,5 +737,81 @@ def clear_intelligence_discovery_history() -> None:
 
         connection.commit()
 
+    finally:
+        connection.close()
+
+
+def save_intelligence_delivery(
+    story_identity: str,
+    title: str | None,
+    category: str | None,
+    source: str | None,
+    url: str | None,
+    delivered_at,
+    delivery_type: str,
+    priority: str | None = None,
+) -> None:
+    """Persist an actual intelligence delivery."""
+
+    connection = sqlite3.connect(DATABASE_PATH)
+
+    try:
+        connection.execute(
+            """
+            INSERT INTO intelligence_delivery_history (
+                story_identity,
+                title,
+                category,
+                source,
+                url,
+                delivered_at,
+                delivery_type,
+                priority
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                story_identity,
+                title,
+                category,
+                source,
+                url,
+                delivered_at,
+                delivery_type,
+                priority,
+            ),
+        )
+        connection.commit()
+    finally:
+        connection.close()
+
+
+def get_intelligence_delivery_history(limit: int = 100) -> list[tuple]:
+    """Return recent intelligence deliveries newest first."""
+
+    connection = sqlite3.connect(DATABASE_PATH)
+
+    try:
+        cursor = connection.execute(
+            """
+            SELECT id, story_identity, title, category, source, url, delivered_at, delivery_type, priority
+            FROM intelligence_delivery_history
+            ORDER BY delivered_at DESC, id DESC
+            LIMIT ?
+            """,
+            (limit,),
+        )
+        return cursor.fetchall()
+    finally:
+        connection.close()
+
+
+def clear_intelligence_delivery_history() -> None:
+    """Clear persisted delivery history for testing."""
+
+    connection = sqlite3.connect(DATABASE_PATH)
+
+    try:
+        connection.execute("DELETE FROM intelligence_delivery_history")
+        connection.commit()
     finally:
         connection.close()
