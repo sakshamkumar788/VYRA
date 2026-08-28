@@ -206,6 +206,12 @@ def save_memory(memory_type: str, content: str) -> None:
         connection.close()
 
 
+STOPWORDS = {
+    "the", "a", "an", "is", "are", "am", "i", "me", "my", "you", "your",
+    "what", "where", "when", "how", "this", "that", "today", "tomorrow",
+    "from", "with", "for", "in", "on", "at", "to", "of", "and", "or"
+}
+
 def tokenize(text: str) -> set[str]:
     """
     Convert text into normalized words.
@@ -233,29 +239,53 @@ def get_relevant_memories(query: str) -> list[tuple[str, str]]:
     try:
         cursor = connection.execute(
             """
-            SELECT memory_type, content
+            SELECT id, memory_type, content
             FROM memories
             ORDER BY id ASC
             """
         )
-
         memories = cursor.fetchall()
     finally:
         connection.close()
 
     query_words = tokenize(query)
+    query_meaningful = query_words - STOPWORDS
 
-    relevant_memories: list[tuple[str, str]] = []
+    if not query_meaningful:
+        return []
 
-    for memory_type, content in memories:
+    candidates = []
+    for mem_id, memory_type, content in memories:
         content_words = tokenize(content)
+        content_meaningful = content_words - STOPWORDS
 
-        if query_words & content_words:
-            relevant_memories.append(
-                (memory_type, content)
-            )
+        overlap = query_meaningful & content_meaningful
+        overlap_count = len(overlap)
 
-    return relevant_memories
+        if overlap_count == 0:
+            continue
+
+        # Relevance threshold
+        if overlap_count >= 2:
+            keep = True
+        else:
+            # Strong overlap ratio for short queries
+            ratio = overlap_count / len(query_meaningful) if query_meaningful else 0
+            if ratio >= 0.5:
+                keep = True
+            else:
+                keep = False
+
+        if keep:
+            # Score by overlap count, then recency
+            candidates.append((overlap_count, mem_id, memory_type, content))
+
+    # Rank by overlap desc, then more recent id desc
+    candidates.sort(key=lambda x: (x[0], x[1]), reverse=True)
+
+    # Limit to top 5
+    top = candidates[:5]
+    return [(memory_type, content) for _, _, memory_type, content in top]
 
 def save_task(title: str, due_at: str | None = None) -> None:
     """Save a new task."""
