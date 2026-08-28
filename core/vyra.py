@@ -514,6 +514,55 @@ TASK RULES:
 
         return True
 
+    def handle_time_date_query(
+        self,
+        user_input: str,
+    ) -> bool:
+        """Handle grounded time/date queries without LLM."""
+        import re
+        from zoneinfo import ZoneInfo
+
+        patterns = {
+            "time": [
+                r"\bwhat time is it\b",
+                r"\bwhat'?s the time\b",
+                r"\bcurrent time\b",
+                r"\bwhat time is it now\b",
+            ],
+            "date": [
+                r"\bwhat date is today\b",
+                r"\btoday'?s date\b",
+                r"\bcurrent date\b",
+            ],
+            "day": [
+                r"\bwhat day is today\b",
+                r"\bwhat day is it\b",
+            ],
+            "month": [
+                r"\bwhat month is it\b",
+            ],
+        }
+
+        lowered = user_input.lower().strip()
+        now = datetime.now(ZoneInfo(self.TIMEZONE))
+
+        for kind, pats in patterns.items():
+            if any(re.search(p, lowered) for p in pats):
+                if kind == "time":
+                    time_str = now.strftime("%I:%M %p")
+                    print(f"VYRA: The current time is {time_str}.\n")
+                elif kind == "date":
+                    date_str = now.strftime("%A, %d %B %Y")
+                    print(f"VYRA: Today's date is {date_str}.\n")
+                elif kind == "day":
+                    day_str = now.strftime("%A")
+                    print(f"VYRA: Today is {day_str}.\n")
+                elif kind == "month":
+                    month_str = now.strftime("%B %Y")
+                    print(f"VYRA: The current month is {month_str}.\n")
+                return True
+        return False
+
     # =============================================================
     # TASKS
     # =============================================================
@@ -1523,6 +1572,15 @@ Rules:
             # -----------------------------------------------------
 
             if self.handle_current_affairs_query(
+                user_input
+            ):
+                continue
+
+            # -----------------------------------------------------
+            # Time / date intent
+            # -----------------------------------------------------
+
+            if self.handle_time_date_query(
                 user_input
             ):
                 continue
