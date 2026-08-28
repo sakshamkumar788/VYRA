@@ -130,6 +130,28 @@ def initialize_database() -> None:
             """
         )
 
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS intelligence_queue (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                story_identity TEXT NOT NULL,
+                title TEXT NOT NULL,
+                summary TEXT NOT NULL,
+                url TEXT,
+                source TEXT,
+                category TEXT,
+                published_at TEXT,
+                priority TEXT NOT NULL,
+                added_at TEXT NOT NULL,
+                UNIQUE(story_identity, priority)
+            )
+            """
+        )
+
+        connection.execute(
+            "CREATE INDEX IF NOT EXISTS idx_intel_queue_priority_added ON intelligence_queue(priority, added_at)"
+        )
+
         connection.commit()
     finally:
         connection.close()
@@ -850,5 +872,118 @@ def save_interaction_state(key: str, value: str) -> None:
             (key, value),
         )
         connection.commit()
+    finally:
+        connection.close()
+
+
+def save_intelligence_queue_item(
+    story_identity: str,
+    title: str,
+    summary: str,
+    url: str | None,
+    source: str | None,
+    category: str | None,
+    published_at: str | None,
+    priority: str,
+    added_at: str,
+) -> None:
+    """Persist a queued intelligence item."""
+    connection = sqlite3.connect(DATABASE_PATH)
+    try:
+        connection.execute(
+            """
+            INSERT INTO intelligence_queue (
+                story_identity, title, summary, url, source, category, published_at, priority, added_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(story_identity, priority) DO UPDATE SET
+                title = excluded.title,
+                summary = excluded.summary,
+                url = excluded.url,
+                source = excluded.source,
+                category = excluded.category,
+                published_at = excluded.published_at,
+                added_at = excluded.added_at
+            """,
+            (
+                story_identity,
+                title,
+                summary,
+                url,
+                source,
+                category,
+                published_at,
+                priority,
+                added_at,
+            ),
+        )
+        connection.commit()
+    finally:
+        connection.close()
+
+
+def load_intelligence_queue_items() -> list[dict]:
+    """Load all persisted queued intelligence items."""
+    connection = sqlite3.connect(DATABASE_PATH)
+    try:
+        cursor = connection.execute(
+            """
+            SELECT story_identity, title, summary, url, source, category, published_at, priority, added_at
+            FROM intelligence_queue
+            ORDER BY 
+                CASE priority WHEN 'important' THEN 0 WHEN 'interesting' THEN 1 ELSE 2 END,
+                added_at ASC
+            """
+        )
+        rows = cursor.fetchall()
+        return [
+            {
+                "story_identity": r[0],
+                "title": r[1],
+                "summary": r[2],
+                "url": r[3],
+                "source": r[4],
+                "category": r[5],
+                "published_at": r[6],
+                "priority": r[7],
+                "added_at": r[8],
+            }
+            for r in rows
+        ]
+    finally:
+        connection.close()
+
+
+def delete_intelligence_queue_item(story_identity: str, priority: str) -> None:
+    """Delete a queued intelligence item by identity and priority."""
+    connection = sqlite3.connect(DATABASE_PATH)
+    try:
+        connection.execute(
+            "DELETE FROM intelligence_queue WHERE story_identity = ? AND priority = ?",
+            (story_identity, priority),
+        )
+        connection.commit()
+    finally:
+        connection.close()
+
+
+def clear_intelligence_queue() -> None:
+    """Clear all persisted queued intelligence items."""
+    connection = sqlite3.connect(DATABASE_PATH)
+    try:
+        connection.execute("DELETE FROM intelligence_queue")
+        connection.commit()
+    finally:
+        connection.close()
+
+
+def story_identity_delivered(story_identity: str) -> bool:
+    """Return True if story identity exists in delivery history."""
+    connection = sqlite3.connect(DATABASE_PATH)
+    try:
+        cursor = connection.execute(
+            "SELECT 1 FROM intelligence_delivery_history WHERE story_identity = ? LIMIT 1",
+            (story_identity,),
+        )
+        return cursor.fetchone() is not None
     finally:
         connection.close()
