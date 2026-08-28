@@ -52,13 +52,15 @@ class RSSIntelligenceSource(IntelligenceSource):
         try:
             xml_data = self._download_feed()
 
-        except Exception:
+        except Exception as e:
+            print(f"RSSIntelligenceSource warning: download failed for {self.feed_url}: {e}")
             return []
 
         try:
             root = ET.fromstring(xml_data)
 
-        except ET.ParseError:
+        except ET.ParseError as e:
+            print(f"RSSIntelligenceSource warning: XML parse failed for {self.feed_url}: {e}")
             return []
 
         stories: list[IntelligenceStory] = []
@@ -67,8 +69,9 @@ class RSSIntelligenceSource(IntelligenceSource):
             try:
                 story = self._parse_entry(item)
 
-            except Exception:
+            except Exception as e:
                 # Do not let one malformed item break the whole feed.
+                print(f"RSSIntelligenceSource warning: failed to parse entry: {e}")
                 continue
 
             if story is not None:

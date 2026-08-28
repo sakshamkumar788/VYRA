@@ -266,7 +266,8 @@ class MorningFactsCollector:
                             f"{event_time}"
                         )
 
-            except Exception:
+            except Exception as e:
+                print(f"MorningFactsCollector warning: calendar provider failed: {e}")
                 important_events = []
 
         news_items: list[str] = []
@@ -288,7 +289,8 @@ class MorningFactsCollector:
                                 item.title
                             )
 
-            except Exception:
+            except Exception as e:
+                print(f"MorningFactsCollector warning: news provider failed: {e}")
                 news_items = []
 
         hour = now.hour
@@ -344,7 +346,8 @@ class MorningFactsCollector:
                 weather_result
         )
             
-        except Exception:
+        except Exception as e:
+            print(f"MorningFactsCollector warning: weather provider failed: {e}")
             weather_summary = None
 
         previously_used_topics = (
