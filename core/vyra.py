@@ -563,6 +563,50 @@ TASK RULES:
                 return True
         return False
 
+    def handle_calendar_query(
+        self,
+        user_input: str,
+    ) -> bool:
+        """Handle grounded calendar queries using vyra_calendar subsystem."""
+        import re
+        from datetime import datetime, timedelta
+        from zoneinfo import ZoneInfo
+        from vyra_calendar.local import LocalCalendarProvider
+
+        patterns = [
+            r"\bwhat'?s on my calendar\b",
+            r"\bwhat do i have on my calendar\b",
+            r"\bwhat'?s my schedule today\b",
+            r"\bwhat meetings do i have today\b",
+            r"\bwhat'?s on my schedule\b",
+            r"\bshow my calendar\b",
+            r"\bwhat'?s scheduled today\b",
+        ]
+
+        lowered = user_input.lower().strip()
+        if not any(re.search(p, lowered) for p in patterns):
+            return False
+
+        now = datetime.now(ZoneInfo(self.TIMEZONE))
+        start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        end = start + timedelta(days=1) - timedelta(seconds=1)
+
+        try:
+            provider = LocalCalendarProvider()
+            events = provider.get_events(start, end)
+            if not events:
+                print("VYRA: No events scheduled for today.\n")
+            else:
+                lines = ["VYRA: Your schedule for today:"]
+                for ev in events:
+                    time_str = ev.start_time.strftime("%I:%M %p").lstrip("0")
+                    loc = f" at {ev.location}" if ev.location else ""
+                    lines.append(f"- {ev.title} {time_str}{loc}")
+                print("\n".join(lines) + "\n")
+        except Exception:
+            print("VYRA: I can't access your calendar right now.\n")
+        return True
+
     # =============================================================
     # TASKS
     # =============================================================
@@ -1581,6 +1625,15 @@ Rules:
             # -----------------------------------------------------
 
             if self.handle_time_date_query(
+                user_input
+            ):
+                continue
+
+            # -----------------------------------------------------
+            # Calendar intent
+            # -----------------------------------------------------
+
+            if self.handle_calendar_query(
                 user_input
             ):
                 continue
