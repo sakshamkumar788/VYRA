@@ -120,6 +120,16 @@ def initialize_database() -> None:
             "CREATE INDEX IF NOT EXISTS idx_intel_delivery_source ON intelligence_delivery_history(source)"
         )
 
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS interaction_state (
+                key TEXT PRIMARY KEY,
+                value TEXT NOT NULL,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        )
+
         connection.commit()
     finally:
         connection.close()
@@ -812,6 +822,33 @@ def clear_intelligence_delivery_history() -> None:
 
     try:
         connection.execute("DELETE FROM intelligence_delivery_history")
+        connection.commit()
+    finally:
+        connection.close()
+
+
+def load_interaction_state(key: str) -> str | None:
+    """Load a persisted interaction state value."""
+    connection = sqlite3.connect(DATABASE_PATH)
+    try:
+        cursor = connection.execute(
+            "SELECT value FROM interaction_state WHERE key = ?",
+            (key,),
+        )
+        row = cursor.fetchone()
+        return row[0] if row else None
+    finally:
+        connection.close()
+
+
+def save_interaction_state(key: str, value: str) -> None:
+    """Save an interaction state value."""
+    connection = sqlite3.connect(DATABASE_PATH)
+    try:
+        connection.execute(
+            "INSERT INTO interaction_state(key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP",
+            (key, value),
+        )
         connection.commit()
     finally:
         connection.close()

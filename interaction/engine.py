@@ -11,6 +11,8 @@ from interaction.policy import (
     InteractionPriority,
 )
 
+from memory.database import load_interaction_state, save_interaction_state
+
 
 class InteractionEngine:
     """
@@ -26,16 +28,36 @@ class InteractionEngine:
     def __init__(self) -> None:
         self.policy = InteractionPolicy()
 
+        # Load persisted proactive state
         self.last_proactive_interaction: datetime | None = None
+        try:
+            persisted_last = load_interaction_state("last_proactive_interaction")
+            if persisted_last:
+                self.last_proactive_interaction = datetime.fromisoformat(persisted_last)
+        except Exception:
+            self.last_proactive_interaction = None
 
-        self._daily_interaction_date = (
-            datetime.now().date()
-        )
+        # Daily interaction date
+        try:
+            persisted_date = load_interaction_state("daily_interaction_date")
+            if persisted_date:
+                self._daily_interaction_date = datetime.fromisoformat(persisted_date).date()
+            else:
+                self._daily_interaction_date = datetime.now().date()
+        except Exception:
+            self._daily_interaction_date = datetime.now().date()
 
-        self._daily_proactive_count = 0
+        # Daily proactive count
+        try:
+            persisted_count = load_interaction_state("daily_proactive_count")
+            if persisted_count is not None:
+                self._daily_proactive_count = int(persisted_count)
+            else:
+                self._daily_proactive_count = 0
+        except Exception:
+            self._daily_proactive_count = 0
 
         self.quiet_mode = False
-
         self._recent_event_types: list[str] = []
 
     # =========================================================
@@ -52,13 +74,15 @@ class InteractionEngine:
             current_time.date()
             != self._daily_interaction_date
         ):
-            self._daily_interaction_date = (
-                current_time.date()
-            )
-
+            self._daily_interaction_date = current_time.date()
             self._daily_proactive_count = 0
-
             self._recent_event_types.clear()
+            # Persist reset daily state
+            try:
+                save_interaction_state("daily_interaction_date", self._daily_interaction_date.isoformat())
+                save_interaction_state("daily_proactive_count", str(self._daily_proactive_count))
+            except Exception:
+                pass
 
     # =========================================================
     # QUIET MODE
@@ -237,20 +261,18 @@ class InteractionEngine:
                 InteractionPriority.NORMAL,
             }
         ):
-            self.last_proactive_interaction = (
-                current_time
-            )
-
+            self.last_proactive_interaction = current_time
             self._daily_proactive_count += 1
+            self._recent_event_types.append(event.event_type)
+            self._recent_event_types = self._recent_event_types[-10:]
 
-            self._recent_event_types.append(
-                event.event_type
-            )
-
-            # Keep only a small recent history.
-            self._recent_event_types = (
-                self._recent_event_types[-10:]
-            )
+            # Persist state
+            try:
+                save_interaction_state("last_proactive_interaction", self.last_proactive_interaction.isoformat())
+                save_interaction_state("daily_proactive_count", str(self._daily_proactive_count))
+                save_interaction_state("daily_interaction_date", self._daily_interaction_date.isoformat())
+            except Exception:
+                pass
 
     # =========================================================
     # CONTEXT CREATION

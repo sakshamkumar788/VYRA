@@ -1293,6 +1293,10 @@ Rules:
                 f"\nVYRA location update unavailable: "
                 f"{error}\n"
             )
+            self.context_manager.update_location(
+                location_name=None,
+                accuracy_meters=None,
+            )
 
     def evaluate_intelligence_story(
         self,
