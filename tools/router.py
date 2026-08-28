@@ -70,7 +70,6 @@ class ToolRouter:
             r"\bweather\b",
             r"\btemperature\b",
             r"\bforecast\b",
-            r"\brain\b",
         ]
 
         is_weather_request = any(
@@ -100,7 +99,6 @@ class ToolRouter:
             r"\bweather\s+(?:in|at|for)\s+(.+)",
             r"\btemperature\s+(?:in|at|for)\s+(.+)",
             r"\bforecast\s+(?:in|at|for)\s+(.+)",
-            r"\brain\s+(?:in|at|for)\s+(.+)",
         ]
 
         location: str | None = None
@@ -128,11 +126,6 @@ class ToolRouter:
             location = location.strip(
                 " ?!.,"
             )
-
-        # Temporary default.
-        # Later this will come from VYRA's user/location profile.
-        if not location:
-            location = "Jalandhar"
 
         return ToolRequest(
             tool_name="weather",

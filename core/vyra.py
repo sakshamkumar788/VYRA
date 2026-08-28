@@ -294,38 +294,61 @@ TASK RULES:
         user_message: str,
     ) -> bool:
         """
-        Temporary memory detection.
+        High-precision deterministic memory candidate detection.
 
-        This will eventually be replaced by a proper
-        memory extraction system.
+        Replaces broad substring matching with conservative regex patterns
+        to avoid false positives on ordinary conversation while still
+        capturing clear personal facts/preferences.
         """
 
-        memory_signals = [
-            "i am",
-            "i'm",
-            "i want",
-            "i need",
-            "my goal",
-            "i prefer",
-            "i like",
-            "i don't like",
-            "remember",
-            "from now on",
-            "this semester",
-            "this week",
-            "i decided",
-            "i plan",
-            "i'm planning",
-            "my priority",
-            "i've decided",
+        import re
+
+        msg = user_message.lower()
+
+        # Explicit exclusions for common conversational / question patterns
+        negative_patterns = [
+            r"\bi want to know\b",
+            r"\bi want to ask\b",
+            r"\bi like this (joke|answer)\b",
+            r"\bi am talking to you\b",
+            r"\bi am asking\b",
+            r"\bi am checking\b",
+            r"\bi am bored\b",
+            r"\bwhere am i\b",
+            r"\bwhat'?s the news\b",
+            r"\btell me a fun fact\b",
+            r"\bgoodbye\b",
+            r"\bbye\b",
         ]
+        for pat in negative_patterns:
+            if re.search(pat, msg):
+                return False
 
-        message = user_message.lower()
+        # High-confidence personal fact / preference patterns
+        positive_patterns = [
+            r"\bremember that\b",
+            r"\bfrom now on\b",
+            r"\bi live in\b",
+            r"\bi work at\b",
+            r"\bi study at\b",
+            r"\bi study\b",
+            r"\bi am studying\b",
+            r"\bmy name is\b",
+            r"\bcall me\b",
+            r"\bmy birthday is\b",
+            r"\bmy goal\b",
+            r"\bmy priority is\b",
+            r"\bi prefer\b",
+            r"\bi don't like\b",
+            r"\bi decided to\b",
+            r"\bi am a\b",
+            r"\bi am from\b",
+        ]
+        for pat in positive_patterns:
+            if re.search(pat, msg):
+                return True
 
-        return any(
-            signal in message
-            for signal in memory_signals
-        )
+        return False
 
     def save_memory_with_confirmation(
         self,
@@ -773,6 +796,26 @@ TASK RULES:
 
         if request is None:
             return None
+
+        # Resolve missing weather location using LocationService
+        if request.tool_name == "weather":
+            location = request.arguments.get("location")
+            if not location:
+                try:
+                    current_location = self.location_service.get_current_location()
+                    city = getattr(current_location, "city", None)
+                    if city:
+                        request.arguments["location"] = city
+                    else:
+                        return (
+                            "I couldn't determine your current location. "
+                            "Please tell me which city you want the weather for."
+                        )
+                except Exception:
+                    return (
+                        "I couldn't determine your current location right now. "
+                        "Please tell me which city you want the weather for."
+                    )
 
         return self.tool_router.execute(
             request
