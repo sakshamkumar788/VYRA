@@ -1376,9 +1376,6 @@ Rules:
 
             self.context_manager.update_location(
                 location_name=location_name or None,
-                accuracy_meters=(
-                    location.accuracy_meters
-                ),
             )
 
         except Exception as error:
@@ -1388,7 +1385,6 @@ Rules:
             )
             self.context_manager.update_location(
                 location_name=None,
-                accuracy_meters=None,
             )
 
     def evaluate_intelligence_story(

@@ -44,7 +44,8 @@ def test_update_location_context_clears_on_failure():
     # Should have been called with None values
     args, kwargs = vyra.context_manager.update_location.call_args
     assert kwargs.get("location_name") is None
-    assert kwargs.get("accuracy_meters") is None
+    # accuracy_meters no longer passed
+    assert "accuracy_meters" not in kwargs
     print("Stale location cleared on failure test passed.")
 
 def test_update_location_context_sets_on_success():
@@ -58,7 +59,8 @@ def test_update_location_context_sets_on_success():
     vyra.update_location_context()
     args, kwargs = vyra.context_manager.update_location.call_args
     assert kwargs.get("location_name") == "Delhi, Delhi, India"
-    assert kwargs.get("accuracy_meters") == 50.0
+    # accuracy_meters no longer passed to context
+    assert "accuracy_meters" not in kwargs
     print("Location set on success test passed.")
 
 if __name__ == "__main__":

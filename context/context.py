@@ -34,7 +34,6 @@ class UserContext:
     activity_count: int = 0
 
     current_location: str | None = None
-    location_accuracy_meters: float | None = None
 
 @dataclass
 class DailySessionState:
@@ -105,16 +104,12 @@ class ContextManager:
     def update_location(
         self,
         location_name: str | None,
-        accuracy_meters: float | None = None,
     ) -> None:
         """Update the current coarse location."""
 
         self.update_time()
 
         self.context.current_location = location_name
-        self.context.location_accuracy_meters = (
-            accuracy_meters
-        )
 
     def start_meaningful_session(self) -> None:
         """Mark that the user has meaningfully started VYRA for today."""
