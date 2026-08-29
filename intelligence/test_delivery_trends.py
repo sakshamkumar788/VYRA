@@ -229,32 +229,64 @@ def test_decreasing_trend():
 
 
 def test_stable_trend():
+
     _clean()
-    # Same count in both windows
-    base = datetime(2026, 1, 1)
-    # previous: 2 items
+
+    # Same count in both non-overlapping windows
     save_intelligence_delivery(
-        story_identity="p1", title="P1", category="music", source="s",
-        url=None, delivered_at=datetime(2026, 1, 2), delivery_type="intelligence", priority=None,
+        story_identity="p1",
+        title="P1",
+        category="music",
+        source="s",
+        url=None,
+        delivered_at=datetime(2026, 1, 2),
+        delivery_type="intelligence",
+        priority=None,
     )
+
     save_intelligence_delivery(
-        story_identity="p2", title="P2", category="music", source="s",
-        url=None, delivered_at=datetime(2026, 1, 5), delivery_type="intelligence", priority=None,
+        story_identity="p2",
+        title="P2",
+        category="music",
+        source="s",
+        url=None,
+        delivered_at=datetime(2026, 1, 5),
+        delivery_type="intelligence",
+        priority=None,
     )
-    # current: 2 items
+
     save_intelligence_delivery(
-        story_identity="c1", title="C1", category="music", source="s",
-        url=None, delivered_at=datetime(2026, 1, 15), delivery_type="intelligence", priority=None,
+        story_identity="c1",
+        title="C1",
+        category="music",
+        source="s",
+        url=None,
+        delivered_at=datetime(2026, 1, 15),
+        delivery_type="intelligence",
+        priority=None,
     )
+
     save_intelligence_delivery(
-        story_identity="c2", title="C2", category="music", source="s",
-        url=None, delivered_at=datetime(2026, 1, 18), delivery_type="intelligence", priority=None,
+        story_identity="c2",
+        title="C2",
+        category="music",
+        source="s",
+        url=None,
+        delivered_at=datetime(2026, 1, 18),
+        delivery_type="intelligence",
+        priority=None,
     )
+
     trends = get_category_trends(
-        datetime(2026, 1, 1), datetime(2026, 1, 20),
-        datetime(2026, 1, 1), datetime(2026, 1, 10),
+        datetime(2026, 1, 11),
+        datetime(2026, 1, 20),
+        datetime(2026, 1, 1),
+        datetime(2026, 1, 10),
     )
-    assert trends.get("music") == "stable", f"Expected stable, got {trends}"
+
+    assert trends.get("music") == "stable", (
+        f"Expected stable, got {trends}"
+    )
 
 
 def test_missing_category_treated_as_zero():
@@ -270,7 +302,9 @@ def test_missing_category_treated_as_zero():
     )
     assert trends.get("tech") == "increasing", f"Expected increasing, got {trends}"
     # category "sports" missing in both -> stable (0 vs 0)
-    assert trends.get("sports") == "stable", f"Expected stable for sports, got {trends}"
+    assert trends.get("sports") is None, (
+        f"Expected missing category to be absent, got {trends}"
+    )
 
 
 def test_no_feedback_profile_interaction():

@@ -4,6 +4,7 @@ from morning.prompt import MorningPromptBuilder
 from morning.relevance import BriefingRelevanceSelector
 from morning.context import with_selected_candidates
 
+from intelligence.trends import build_trend_context, format_trend_context, TrendContext
 from intelligence.feedback import FeedbackProfile
 
 
@@ -24,6 +25,7 @@ class MorningBriefingGenerator:
         self,
         context: MorningBriefingContext,
         feedback_profile: FeedbackProfile | None = None,
+        trend_ctx: TrendContext | None = None,
     ) -> str:
         """Select relevant facts and generate grounded briefing."""
 
@@ -66,4 +68,12 @@ class MorningBriefingGenerator:
             messages
         )
 
-        return response.strip()
+        briefing = response.strip()
+
+        # Append deterministic trend section if provided.
+        if trend_ctx is not None:
+            trend_str = format_trend_context(trend_ctx)
+            if trend_str:
+                briefing += " " + trend_str
+
+        return briefing
