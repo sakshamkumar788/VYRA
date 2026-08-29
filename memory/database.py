@@ -867,6 +867,121 @@ def get_intelligence_delivery_history(limit: int = 100) -> list[tuple]:
         connection.close()
 
 
+def get_delivery_counts_by_category(
+    start_time: datetime,
+    end_time: datetime,
+) -> dict[str, int]:
+    """Return delivery counts per category within the given window."""
+    connection = sqlite3.connect(DATABASE_PATH)
+    try:
+        cursor = connection.execute(
+            """
+            SELECT category, COUNT(*)
+            FROM intelligence_delivery_history
+            WHERE delivered_at >= ? AND delivered_at < ?
+            GROUP BY category
+            """,
+            (start_time, end_time),
+        )
+        rows = cursor.fetchall()
+        return {str(row[0]) if row[0] is not None else "unknown": row[1] for row in rows}
+    finally:
+        connection.close()
+
+
+def get_delivery_counts_by_source(
+    start_time: datetime,
+    end_time: datetime,
+) -> dict[str, int]:
+    """Return delivery counts per source within the given window."""
+    connection = sqlite3.connect(DATABASE_PATH)
+    try:
+        cursor = connection.execute(
+            """
+            SELECT source, COUNT(*)
+            FROM intelligence_delivery_history
+            WHERE delivered_at >= ? AND delivered_at < ?
+            GROUP BY source
+            """,
+            (start_time, end_time),
+        )
+        rows = cursor.fetchall()
+        return {str(row[0]) if row[0] is not None else "unknown": row[1] for row in rows}
+    finally:
+        connection.close()
+
+
+def get_delivery_counts_by_type(
+    start_time: datetime,
+    end_time: datetime,
+) -> dict[str, int]:
+    """Return delivery counts per delivery_type within the given window."""
+    connection = sqlite3.connect(DATABASE_PATH)
+    try:
+        cursor = connection.execute(
+            """
+            SELECT delivery_type, COUNT(*)
+            FROM intelligence_delivery_history
+            WHERE delivered_at >= ? AND delivered_at < ?
+            GROUP BY delivery_type
+            """,
+            (start_time, end_time),
+        )
+        rows = cursor.fetchall()
+        return {str(row[0]): row[1] for row in rows}
+    finally:
+        connection.close()
+
+
+def get_total_deliveries(
+    start_time: datetime,
+    end_time: datetime,
+) -> int:
+    """Return total number of deliveries within the given window."""
+    connection = sqlite3.connect(DATABASE_PATH)
+    try:
+        cursor = connection.execute(
+            """
+            SELECT COUNT(*)
+            FROM intelligence_delivery_history
+            WHERE delivered_at >= ? AND delivered_at < ?
+            """,
+            (start_time, end_time),
+        )
+        row = cursor.fetchone()
+        return row[0] if row else 0
+    finally:
+        connection.close()
+
+
+def get_category_trends(
+    current_start: datetime,
+    current_end: datetime,
+    previous_start: datetime,
+    previous_end: datetime,
+) -> dict[str, str]:
+    """Compare category counts between two windows.
+
+    Returns a dict mapping category to "increasing", "decreasing", or "stable".
+    Missing categories count as zero.
+    """
+    current = get_delivery_counts_by_category(current_start, current_end)
+    previous = get_delivery_counts_by_category(previous_start, previous_end)
+
+    all_categories = set(current.keys()) | set(previous.keys())
+    trends: dict[str, str] = {}
+    for cat in all_categories:
+        cur_count = current.get(cat, 0)
+        prev_count = previous.get(cat, 0)
+        if cur_count > prev_count:
+            trends[cat] = "increasing"
+        elif cur_count < prev_count:
+            trends[cat] = "decreasing"
+        else:
+            trends[cat] = "stable"
+    return trends
+
+
 def clear_intelligence_delivery_history() -> None:
     """Clear persisted delivery history for testing."""
 
