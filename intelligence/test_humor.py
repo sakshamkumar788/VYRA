@@ -183,6 +183,10 @@ class TestEmptyPoolHandling(unittest.TestCase):
 
 
 class TestIntelligenceHumorIntegration(unittest.TestCase):
+    def setUp(self):
+        from memory.database import clear_interaction_state
+        clear_interaction_state()
+
     def _make_intelligence_engine(self):
         from intelligence.engine import IntelligenceEngine
         from intelligence.ingestion import IntelligenceIngestionEngine

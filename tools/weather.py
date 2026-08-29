@@ -51,6 +51,8 @@ def _get_json(url: str, params: dict[str, str]) -> dict:
 def _geocode(location: str) -> dict | None:
     """Convert a city/place name into coordinates."""
 
+    import re
+
     data = _get_json(
         GEOCODING_URL,
         {
@@ -66,7 +68,23 @@ def _geocode(location: str) -> dict | None:
     if not results:
         return None
 
-    return results[0]
+    first = results[0]
+    result_name = first.get("name", "").strip().lower()
+    req = location.strip().lower()
+
+    # Validate that the geocoding result sufficiently matches the requested location.
+    # Use whole-word containment to avoid silent substitution to an unrelated city.
+    # Accept if either string contains the other as a whole word.
+    if result_name == req:
+        return first
+
+    # Whole-word containment check
+    if re.search(r'\b' + re.escape(req) + r'\b', result_name):
+        return first
+    if re.search(r'\b' + re.escape(result_name) + r'\b', req):
+        return first
+
+    return None
 
 
 def get_weather(

@@ -357,9 +357,7 @@ TASK RULES:
         """Ask before saving a possible personal memory."""
 
         print(
-            "VYRA: That sounds like something that might "
-            "be useful for me to remember. "
-            "Should I save it? (yes/no)"
+            "VYRA: Should I remember that? (yes/no)"
         )
 
         confirmation = input(

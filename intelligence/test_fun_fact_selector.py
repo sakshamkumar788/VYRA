@@ -7,6 +7,7 @@ from intelligence.fun_fact_selector import FunFactSelector, FunFactCandidate
 from interaction.engine import InteractionEngine
 from interaction.policy import InteractionContext, InteractionDecision, InteractionPriority
 from context.context import SessionState
+from memory.database import clear_interaction_state
 
 
 def make_engine() -> FunFactEngine:
@@ -196,6 +197,7 @@ def test_existing_fun_fact_engine_unchanged():
 
 
 if __name__ == "__main__":
+    clear_interaction_state()
     test_high_confidence_can_be_selected()
     test_low_confidence_not_promoted_excessively()
     test_positive_category_preference_increases_score()

@@ -906,6 +906,16 @@ def save_interaction_state(key: str, value: str) -> None:
         connection.close()
 
 
+def clear_interaction_state() -> None:
+    """Clear all persisted interaction state. Intended for test isolation."""
+    connection = sqlite3.connect(DATABASE_PATH)
+    try:
+        connection.execute("DELETE FROM interaction_state")
+        connection.commit()
+    finally:
+        connection.close()
+
+
 def save_intelligence_queue_item(
     story_identity: str,
     title: str,

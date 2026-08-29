@@ -111,6 +111,18 @@ def test_confirmation_flow_no():
     assert len(saved) == 0
     print("Confirmation no test passed.")
 
+def test_confirmation_prompt_wording():
+    vyra = make_vyra()
+    from unittest.mock import patch
+    printed = []
+    def fake_print(s):
+        printed.append(s)
+    with patch('builtins.input', return_value='no'):
+        with patch('builtins.print', side_effect=fake_print):
+            vyra.save_memory_with_confirmation("test")
+    assert any("Should I remember that? (yes/no)" in p for p in printed)
+    print("Confirmation prompt wording test passed.")
+
 
 if __name__ == "__main__":
     test_must_not_trigger()
@@ -118,4 +130,5 @@ if __name__ == "__main__":
     test_explicit_remember_unchanged()
     test_confirmation_flow_yes()
     test_confirmation_flow_no()
+    test_confirmation_prompt_wording()
     print("All memory detection tests passed.")

@@ -130,9 +130,68 @@ def test_execute_with_location_service():
 
     print("Execute with location service tests passed.")
 
+
+def test_geocode_validation():
+    # Mock _get_json to return controlled results without network
+    from tools import weather as weather_mod
+    original_get_json = weather_mod._get_json
+
+    def fake_get_json(url, params):
+        name = params.get("name", "").lower()
+        # Valid exact match
+        if name == "delhi":
+            return {"results": [{"name": "Delhi", "latitude": 28.6, "longitude": 77.2}]}
+        # Name contains request
+        if name == "new york":
+            return {"results": [{"name": "New York City", "latitude": 40.7, "longitude": -74.0}]}
+        # Request contains name
+        if name == "london uk":
+            return {"results": [{"name": "London", "latitude": 51.5, "longitude": -0.1}]}
+        # Poor match: request "Paris" returns "Pariss" (typo) -> should be rejected
+        if name == "paris":
+            return {"results": [{"name": "Pariss", "latitude": 48.8, "longitude": 2.3}]}
+        # No results
+        if name == "xyznonexistentcity":
+            return {"results": []}
+        # Unrelated city: request "Tokyo" returns "Toki" -> reject
+        if name == "tokyo":
+            return {"results": [{"name": "Toki", "latitude": 0, "longitude": 0}]}
+        return {"results": []}
+
+    weather_mod._get_json = fake_get_json
+    try:
+        # Valid exact match accepted
+        res = weather_mod._geocode("Delhi")
+        assert res is not None and res["name"] == "Delhi"
+
+        # Request is substring of result name accepted
+        res = weather_mod._geocode("New York")
+        assert res is not None and res["name"] == "New York City"
+
+        # Result name is substring of request accepted
+        res = weather_mod._geocode("London UK")
+        assert res is not None and res["name"] == "London"
+
+        # Poor match rejected
+        res = weather_mod._geocode("Paris")
+        assert res is None, "Poor match should be rejected"
+
+        # No results rejected
+        res = weather_mod._geocode("xyzNonExistentCity")
+        assert res is None
+
+        # Unrelated city rejected
+        res = weather_mod._geocode("Tokyo")
+        assert res is None, "Unrelated city should be rejected"
+
+        print("Geocode validation tests passed.")
+    finally:
+        weather_mod._get_json = original_get_json
+
 if __name__ == "__main__":
     test_must_recognize()
     test_must_not_recognize()
     test_location_extraction()
     test_execute_with_location_service()
+    test_geocode_validation()
     print("All weather tests passed.")

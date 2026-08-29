@@ -18,6 +18,7 @@ from interaction.policy import (
 from memory.database import (
     clear_intelligence_discovery_history,
     get_intelligence_discovery_history,
+    clear_interaction_state,
 )
 
 
@@ -66,6 +67,7 @@ def _score(engine: DiscoveryEngine, story: IntelligenceStory) -> int:
 
 def main() -> None:
     clear_intelligence_discovery_history()
+    clear_interaction_state()
     engine = DiscoveryEngine()
 
     strong_story = IntelligenceStory(
