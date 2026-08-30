@@ -83,26 +83,33 @@ def speak(text: str) -> None:
         return
 
     # Create a fresh engine for this call – no reuse across calls.
-    engine = pyttsx3.init()
-
-    # Try to select the Microsoft Zira voice if it exists on the system.
+    engine = None
     try:
-        voices = engine.getProperty("voices")
-        zira_voice = None
-        for v in voices:
-            name = (v.name or "").lower()
-            vid = (v.id or "").lower()
-            if "zira" in name or "zira" in vid:
-                zira_voice = v
-                break
-        if zira_voice is not None:
-            engine.setProperty("voice", zira_voice.id)
-    except Exception:
-        pass
+        engine = pyttsx3.init()
 
-    try:
-        engine.say(spoken)
-        engine.runAndWait()
-    except Exception:
-        pass
-    # Engine is deliberately discarded; the next call will create a fresh one.
+        # Try to select the Microsoft Zira voice if it exists on the system.
+        try:
+            voices = engine.getProperty("voices")
+            zira_voice = None
+            for v in voices:
+                name = (v.name or "").lower()
+                vid = (v.id or "").lower()
+                if "zira" in name or "zira" in vid:
+                    zira_voice = v
+                    break
+            if zira_voice is not None:
+                engine.setProperty("voice", zira_voice.id)
+        except Exception:
+            pass
+
+        try:
+            engine.say(spoken)
+            engine.runAndWait()
+        except Exception:
+            pass
+    finally:
+        try:
+            if engine is not None:
+                engine.stop()
+        except Exception:
+            pass

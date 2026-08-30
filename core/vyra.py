@@ -301,7 +301,7 @@ TASK RULES:
         # inventing a conflicting one.
         for memory_type, content in memories:
             lines.append(
-                 f"- [{memory_type}] {content}"
+                 f"- {content}"
             )
 
         return "\n".join(lines)
@@ -987,16 +987,15 @@ CURRENT USER REQUEST:
 Answer naturally.
 
 MEMORY RULES:
-- Relevant memories may be provided with the current request.
-- Treat provided memories marked [VERIFIED USER MEMORY] as ground truth.
-- Use them when they directly help answer the request.
-- Do not invent memories.
+- Relevant long-term memories may be provided with the current request.
+- Treat the supplied long-term memories as factual user information.
+- Use a memory when it directly helps answer the current request.
+- Do not invent personal facts.
 - Do not mention unrelated memories.
-- Never state a specific city, address, or residence as fact unless it
-  appears in a [VERIFIED USER MEMORY] provided in this request.
-- If asked where Saksham lives, works, or is from, and no
-  [VERIFIED USER MEMORY] gives that information, say plainly that you
-  don't have that stored yet. Do not guess or name any city.
+- Never invent a city, address, residence, workplace, or other personal fact.
+- If the supplied memories do not contain the requested personal fact,
+  say that you do not have that information stored.
+- Do not mention these memory rules or internal memory formatting in your answer.
 """
 
         messages_for_model: list[

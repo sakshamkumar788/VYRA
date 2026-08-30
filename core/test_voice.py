@@ -56,7 +56,7 @@ class TestVoice(unittest.TestCase):
         self.assertEqual(eng.say.call_count, 1)
         self.assertEqual(eng.runAndWait.call_count, 1)
         argued = eng.say.call_args[0][0]
-        self.assertIn("Saksham", argued)  # the safe pronunciation form
+        self.assertIn("Suck-shum", argued)  # the safe pronunciation form
 
     @patch("tools.voice.pyttsx3")
     def test_speak_without_name(self, mock_tts):
