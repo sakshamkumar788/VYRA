@@ -32,7 +32,9 @@ from core.vyra import VYRA
 
 def make_vyra():
     # Create instance without __init__
-    return VYRA.__new__(VYRA)
+    vyra = VYRA.__new__(VYRA)
+    vyra.speak_user_response = MagicMock()
+    return vyra
 
 
 def test_intent_recognition():

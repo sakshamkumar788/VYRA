@@ -1,5 +1,7 @@
 from news.base import NewsProvider
 
+from location.service import LocationService
+
 from datetime import datetime, timedelta
 
 from vyra_calendar.base import CalendarProvider
@@ -16,6 +18,7 @@ from memory.database import (
 from tools.weather import get_weather
 
 from morning.context import MorningBriefingContext
+
 
 def _summarize_weather(
     weather_text: str,
@@ -85,6 +88,7 @@ def _summarize_weather(
 
     return ", ".join(parts)
 
+
 def _get_previous_briefing_topics() -> list[str]:
     """Return topics used in recent briefings."""
 
@@ -108,6 +112,7 @@ def _get_previous_briefing_topics() -> list[str]:
                 topics.append(topic)
 
     return topics
+
 
 def _get_relevant_briefing_memories() -> list[str]:
     """
@@ -144,6 +149,7 @@ def _get_relevant_briefing_memories() -> list[str]:
 
     return relevant[:5]
 
+
 class MorningFactsCollector:
     """Collect verified information for the morning briefing."""
 
@@ -151,77 +157,11 @@ class MorningFactsCollector:
         self,
         calendar_provider: CalendarProvider | None = None,
         news_provider: NewsProvider | None = None,
+        location_service: LocationService | None = None,
     ) -> None:
         self.calendar_provider = calendar_provider
         self.news_provider = news_provider
-
-    def _summarize_weather(
-        weather_text: str,
-    ) -> str:
-        """Convert the weather tool's text response into a short summary."""
-
-        lines = [
-            line.strip()
-            for line in weather_text.splitlines()
-            if line.strip()
-        ]
-
-        temperature = None
-        conditions = None
-        humidity = None
-        wind = None
-
-        for line in lines:
-            if line.startswith("Temperature:"):
-                temperature = line.replace(
-                    "Temperature:",
-                    "",
-                    1,
-                ).strip()
-
-            elif line.startswith("Conditions:"):
-                conditions = line.replace(
-                    "Conditions:",
-                    "",
-                    1,
-                ).strip()
-
-            elif line.startswith("Humidity:"):
-                humidity = line.replace(
-                    "Humidity:",
-                    "",
-                1,
-                ).strip()
-
-            elif line.startswith("Wind:"):
-                wind = line.replace(
-                    "Wind:",
-                    "",
-                1,
-                ).strip()
-
-        parts: list[str] = []
-
-        if temperature:
-            parts.append(temperature)
-
-        if conditions:
-            parts.append(conditions)
-
-        if humidity:
-            parts.append(
-                f"humidity {humidity}"
-            )
-
-        if wind:
-            parts.append(
-                f"wind {wind}"
-            )
-
-        if not parts:
-            return weather_text.strip()
-
-        return ", ".join(parts)
+        self.location_service = location_service
 
     def collect(self) -> MorningBriefingContext:
         """Collect currently available morning facts."""
@@ -336,19 +276,20 @@ class MorningFactsCollector:
 
         weather_summary: str | None = None
 
-        try:
-            weather_result = get_weather(
-                "Jalandhar, Punjab, India",
-            period="current",
-        )
+        if self.location_service is not None:
+            try:
+                current_location = (
+                    self.location_service.get_current_location()
+                )
+                city = getattr(current_location, "city", None)
 
-            weather_summary = _summarize_weather(
-                weather_result
-        )
-            
-        except Exception as e:
-            print(f"MorningFactsCollector warning: weather provider failed: {e}")
-            weather_summary = None
+                if city:
+                    weather_text = get_weather(city)
+                    weather_summary = _summarize_weather(weather_text)
+
+            except Exception as e:
+                print(f"MorningFactsCollector warning: weather fetch failed: {e}")
+                weather_summary = None
 
         previously_used_topics = (
             _get_previous_briefing_topics()

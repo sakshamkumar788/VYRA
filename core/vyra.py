@@ -174,7 +174,6 @@ TASK RULES:
             interval_seconds=15,
         )
 
-        self.morning_facts_collector = MorningFactsCollector()
         self.morning_briefing_generator = MorningBriefingGenerator(
             brain=self.brain
         )
@@ -185,6 +184,8 @@ TASK RULES:
         )
 
         self.location_service = LocationService()
+
+        self.morning_facts_collector = MorningFactsCollector(location_service=self.location_service)
 
         self.location_manager = LocationManager()
         self.location_manager.load_important_places_from_database()
@@ -239,7 +240,7 @@ TASK RULES:
         )
 
     def get_goodbye(self) -> str:
-        """Return a context-appropriate goodbye."""
+        """Return a context‑appropriate goodbye."""
 
         now = datetime.now(
             ZoneInfo(self.TIMEZONE)
@@ -257,6 +258,14 @@ TASK RULES:
             return "See you later, sir. Enjoy your evening."
 
         return "Goodnight, sir."
+
+    def speak_user_response(self, text: str) -> None:
+        """Speak a user-facing VYRA response without breaking text interaction."""
+        try:
+            from tools.voice import speak
+            speak(text)
+        except Exception:
+            pass  # never break the text‑only flow
 
     # =============================================================
     # MEMORY
@@ -282,9 +291,17 @@ TASK RULES:
             "Relevant long-term memories:"
         ]
 
+        # get_relevant_memories() already applies deterministic
+        # token-overlap relevance filtering (stopwords removed,
+        # overlap threshold enforced, ranked, top-N limited). Anything
+        # it returns has already been judged relevant to the query by
+        # that deterministic logic — not by the LLM — so every returned
+        # memory is treated as a verified user fact. This lets the model
+        # trust stored facts (e.g. residence) instead of guessing or
+        # inventing a conflicting one.
         for memory_type, content in memories:
             lines.append(
-                f"- [{memory_type}] {content}"
+                 f"- [{memory_type}] {content}"
             )
 
         return "\n".join(lines)
@@ -452,15 +469,17 @@ TASK RULES:
                 print(
                     f"VYRA: You are in {location_name}.\n"
                 )
+                self.speak_user_response(location_name)
             else:
                 print(
                     "VYRA: I can't determine your current location right now.\n"
                 )
-
+                self.speak_user_response("I can't determine your current location right now")
         except Exception:
             print(
                 "VYRA: I can't determine your current location right now.\n"
             )
+            self.speak_user_response("I can't determine your current location right now")
 
         return True
 
@@ -507,8 +526,10 @@ TASK RULES:
             output = formatter.format(brief)
 
             print(f"VYRA: {output}\n")
+            self.speak_user_response(output)
         except Exception:
             print("VYRA: I couldn't find any current developments worth summarizing right now.\n")
+            self.speak_user_response("I couldn't find any current developments worth summarizing right now")
 
         return True
 
@@ -549,15 +570,19 @@ TASK RULES:
                 if kind == "time":
                     time_str = now.strftime("%I:%M %p")
                     print(f"VYRA: The current time is {time_str}.\n")
+                    self.speak_user_response(time_str)
                 elif kind == "date":
                     date_str = now.strftime("%A, %d %B %Y")
                     print(f"VYRA: Today's date is {date_str}.\n")
+                    self.speak_user_response(date_str)
                 elif kind == "day":
                     day_str = now.strftime("%A")
                     print(f"VYRA: Today is {day_str}.\n")
+                    self.speak_user_response(day_str)
                 elif kind == "month":
                     month_str = now.strftime("%B %Y")
                     print(f"VYRA: The current month is {month_str}.\n")
+                    self.speak_user_response(month_str)
                 return True
         return False
 
@@ -594,6 +619,7 @@ TASK RULES:
             events = provider.get_events(start, end)
             if not events:
                 print("VYRA: No events scheduled for today.\n")
+                self.speak_user_response("No events scheduled for today")
             else:
                 lines = ["VYRA: Your schedule for today:"]
                 for ev in events:
@@ -601,8 +627,10 @@ TASK RULES:
                     loc = f" at {ev.location}" if ev.location else ""
                     lines.append(f"- {ev.title} {time_str}{loc}")
                 print("\n".join(lines) + "\n")
+                self.speak_user_response("\n".join(lines))
         except Exception:
             print("VYRA: I can't access your calendar right now.\n")
+            self.speak_user_response("I can't access your calendar right now")
         return True
 
     # =============================================================
@@ -958,14 +986,17 @@ CURRENT USER REQUEST:
 
 Answer naturally.
 
-Rules:
-- Use relevant long-term memory when it directly helps.
-- Use task information when it directly helps.
-- Do not invent facts about Saksham.
-- Do not mention unrelated memories or tasks.
-- Do not claim that an action was performed unless it was actually performed.
-- Do not claim that a reminder was delivered unless a reminder system
-  actually delivered it.
+MEMORY RULES:
+- Relevant memories may be provided with the current request.
+- Treat provided memories marked [VERIFIED USER MEMORY] as ground truth.
+- Use them when they directly help answer the request.
+- Do not invent memories.
+- Do not mention unrelated memories.
+- Never state a specific city, address, or residence as fact unless it
+  appears in a [VERIFIED USER MEMORY] provided in this request.
+- If asked where Saksham lives, works, or is from, and no
+  [VERIFIED USER MEMORY] gives that information, say plainly that you
+  don't have that stored yet. Do not guess or name any city.
 """
 
         messages_for_model: list[
@@ -1492,9 +1523,11 @@ Rules:
                 self.context_manager.end_session()
                 self.stop_scheduler()
 
+                goodbye_text = self.get_goodbye()
                 print(
-                    f"VYRA: {self.get_goodbye()}"
+                    f"VYRA: {goodbye_text}"
                 )
+                self.speak_user_response(goodbye_text)
                 break
 
             if not user_input:
@@ -1594,6 +1627,7 @@ Rules:
                 print(
                     f"VYRA: {tool_result}\n"
                 )
+                self.speak_user_response(tool_result)
                 continue
 
             # -----------------------------------------------------
@@ -1655,3 +1689,4 @@ Rules:
             print(
                 f"VYRA: {reply}\n"
             )
+            self.speak_user_response(reply)
