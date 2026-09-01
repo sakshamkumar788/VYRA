@@ -40,6 +40,7 @@ from tools.calculator import calculate
 from tools.registry import Tool, ToolRegistry
 from tools.router import ToolRouter
 from tools.weather import get_weather
+from tools.input_provider import get_default_provider
 
 from interaction.engine import InteractionEngine
 from interaction.policy import (
@@ -54,9 +55,11 @@ class VYRA:
 
     MODEL = "gemma3:4b"
     TIMEZONE = "Asia/Kolkata"
+    input_provider = get_default_provider()
 
     SYSTEM_PROMPT = """
 You are VYRA, a personal AI companion and assistant for Saksham.
+Your name is VYRA. You are the assistant. Saksham is the user. Never identify yourself as Saksham. When asked about your own name or identity, identify yourself as VYRA.
 
 PERSONALITY:
 - Warm, intelligent, observant, calm, and natural.
@@ -206,6 +209,8 @@ TASK RULES:
             dict[str, str]
         ] = []
 
+        self.input_provider = get_default_provider()
+
     # =============================================================
     # CONTEXT
     # =============================================================
@@ -266,6 +271,63 @@ TASK RULES:
             speak(text)
         except Exception:
             pass  # never break the text‑only flow
+
+    def handle_identity_query(self, user_input: str) -> bool:
+        import re
+        patterns = [
+            r'\bwhat is your name\b',
+            r"\bwhat's your name\b",
+            r'\bwho are you\b',
+            r'\bwhat should i call you\b',
+            r'\bwhat do i call you\b',
+            r'\bwho am i talking to\b',
+            r'\bare you vyra\b',
+            r'\bis your name vyra\b',
+        ]
+        lowered = user_input.lower()
+        for pat in patterns:
+            if re.search(pat, lowered):
+                response = "My name is VYRA. You can call me VYRA."
+                print(f"VYRA: {response}\n")
+                self.speak_user_response(response)
+                return True
+        return False
+
+    def handle_user_identity_query(self, user_input: str) -> bool:
+        import re
+        from memory.database import get_relevant_memories
+        patterns = [
+            r'\bmy name\b',
+            r'\bwho am i\b',
+            r'\bwhat (?:do you|do u) call me\b',
+            r'\bwhat name (?:do you|do u) call me\b',
+            r'\bwhat is the name you call me\b',
+        ]
+        lowered = user_input.lower()
+        for pat in patterns:
+            if re.search(pat, lowered):
+                memories = get_relevant_memories('my name')
+                name = None
+                for mem_type, content in memories:
+                    m = re.search(r'(?:my name is|i am|i\'m)\s+([A-Za-z]+)', content, re.I)
+                    if m:
+                        name = m.group(1)
+                        break
+                if not name:
+                    # fallback: try generic name extraction
+                    for mem_type, content in memories:
+                        m = re.search(r'\b([A-Z][a-z]+)\b', content)
+                        if m:
+                            name = m.group(1)
+                            break
+                if name:
+                    response = f"Your name is {name}."
+                else:
+                    response = "I don't have your name stored."
+                print(f"VYRA: {response}\n")
+                self.speak_user_response(response)
+                return True
+        return False
 
     # =============================================================
     # MEMORY
@@ -377,7 +439,7 @@ TASK RULES:
             "VYRA: Should I remember that? (yes/no)"
         )
 
-        confirmation = input(
+        confirmation = self.input_provider.get_text(
             "You: "
         ).strip().lower()
 
@@ -466,10 +528,11 @@ TASK RULES:
 
             if parts:
                 location_name = ", ".join(parts)
+                response = f"You are in {location_name}."
                 print(
-                    f"VYRA: You are in {location_name}.\n"
+                    f"VYRA: {response}\n"
                 )
-                self.speak_user_response(location_name)
+                self.speak_user_response(response)
             else:
                 print(
                     "VYRA: I can't determine your current location right now.\n"
@@ -1492,7 +1555,7 @@ MEMORY RULES:
         print()
 
         while True:
-            user_input = input(
+            user_input = self.input_provider.get_text(
                 "You: "
             ).strip()
 
@@ -1584,7 +1647,7 @@ MEMORY RULES:
                         f"Should I save it? (yes/no)"
                     )
 
-                confirmation = input(
+                confirmation = self.input_provider.get_text(
                     "You: "
                 ).strip().lower()
 
@@ -1663,6 +1726,20 @@ MEMORY RULES:
             if self.handle_calendar_query(
                 user_input
             ):
+                continue
+
+            # -----------------------------------------------------
+            # Assistant identity
+            # -----------------------------------------------------
+
+            if self.handle_identity_query(user_input):
+                continue
+
+            # -----------------------------------------------------
+            # User identity
+            # -----------------------------------------------------
+
+            if self.handle_user_identity_query(user_input):
                 continue
 
             # -----------------------------------------------------
